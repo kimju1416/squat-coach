@@ -17,14 +17,14 @@
   #overlay{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;transform:scaleX(-1);}
   /* 비네트 + 스캔 글로우 */
   #vignette{position:absolute;inset:0;z-index:2;pointer-events:none;
-    background:radial-gradient(ellipse at center,transparent 38%,rgba(2,6,23,0.55) 100%);}
+    background:radial-gradient(ellipse at center,transparent 50%,rgba(2,6,23,0.4) 100%);}
   #scan{position:absolute;left:0;right:0;height:2px;z-index:3;pointer-events:none;
-    background:linear-gradient(90deg,transparent,rgba(34,211,238,0.65),transparent);
-    box-shadow:0 0 14px 2px rgba(34,211,238,0.5);animation:scan 3.6s linear infinite;}
+    background:linear-gradient(90deg,transparent,rgba(45,212,130,0.65),transparent);
+    box-shadow:0 0 14px 2px rgba(45,212,130,0.5);animation:scan 3.6s linear infinite;}
   @keyframes scan{0%{top:8%;}50%{top:88%;}100%{top:8%;}}
 
   /* HUD 프레임 코너 */
-  .corner{position:absolute;width:34px;height:34px;border:2px solid rgba(34,211,238,0.6);z-index:4;pointer-events:none;}
+  .corner{position:absolute;width:34px;height:34px;border:2px solid rgba(45,212,130,0.6);z-index:4;pointer-events:none;}
   .corner.tl{top:14px;left:14px;border-right:none;border-bottom:none;}
   .corner.tr{top:14px;right:14px;border-left:none;border-bottom:none;}
   .corner.bl{bottom:14px;left:14px;border-right:none;border-top:none;}
@@ -33,64 +33,64 @@
   /* 상단 HUD */
   #topbar{position:absolute;top:0;left:0;right:0;padding:calc(env(safe-area-inset-top) + 18px) 22px 10px;
     display:flex;justify-content:space-between;align-items:flex-start;z-index:6;pointer-events:none;}
-  #sysLabel{font-size:11px;letter-spacing:1.5px;color:#67e8f9;text-shadow:0 0 8px rgba(34,211,238,0.7);}
+  #sysLabel{font-size:11px;letter-spacing:1.5px;color:#8affc1;text-shadow:0 0 8px rgba(45,212,130,0.7);}
   #sysLabel .rec{color:#f87171;}
-  #sysLabel .sub{display:block;font-size:9px;color:#7dd3fc;opacity:0.7;margin-top:3px;letter-spacing:1px;}
+  #sysLabel .sub{display:block;font-size:9px;color:#86efac;opacity:0.7;margin-top:3px;letter-spacing:1px;}
   #counterChip{text-align:right;}
-  #counterChip .n{font-size:30px;font-weight:800;color:#22d3ee;text-shadow:0 0 14px rgba(34,211,238,0.8);
+  #counterChip .n{font-size:30px;font-weight:800;color:#2dd47a;text-shadow:0 0 14px rgba(45,212,130,0.8);
     font-variant-numeric:tabular-nums;line-height:1;}
-  #counterChip .t{font-size:11px;color:#7dd3fc;letter-spacing:1px;}
+  #counterChip .t{font-size:11px;color:#86efac;letter-spacing:1px;}
 
   /* 큰 카운터(중앙 뒤) */
   #bigCount{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:5;pointer-events:none;
-    font-size:150px;font-weight:800;color:rgba(34,211,238,0.16);font-variant-numeric:tabular-nums;line-height:1;}
+    font-size:150px;font-weight:800;color:rgba(45,212,130,0.16);font-variant-numeric:tabular-nums;line-height:1;}
   #bigCount.pop{animation:pop .4s cubic-bezier(.2,1.5,.4,1);}
-  @keyframes pop{0%{transform:translate(-50%,-50%) scale(1);color:rgba(34,211,238,0.16);}
+  @keyframes pop{0%{transform:translate(-50%,-50%) scale(1);color:rgba(45,212,130,0.16);}
     45%{transform:translate(-50%,-50%) scale(1.3);color:rgba(52,211,153,0.5);}
-    100%{transform:translate(-50%,-50%) scale(1);color:rgba(34,211,238,0.16);}}
+    100%{transform:translate(-50%,-50%) scale(1);color:rgba(45,212,130,0.16);}}
 
   /* 하단 HUD */
   #bottom{position:absolute;left:0;right:0;bottom:0;z-index:6;
     padding:16px 22px calc(env(safe-area-inset-bottom) + 22px);
     background:linear-gradient(0deg,rgba(2,6,23,0.9),transparent);}
   #feedback{text-align:center;font-size:17px;font-weight:700;margin-bottom:14px;min-height:24px;letter-spacing:0.5px;
-    color:#67e8f9;text-shadow:0 0 10px rgba(34,211,238,0.5);transition:color .15s;}
+    color:#8affc1;text-shadow:0 0 10px rgba(45,212,130,0.5);transition:color .15s;}
   #depthWrap{display:flex;align-items:center;gap:12px;}
-  #depthLabel{font-size:10px;letter-spacing:1px;color:#7dd3fc;width:64px;}
-  #depthTrack{flex:1;height:10px;background:rgba(34,211,238,0.12);border:1px solid rgba(34,211,238,0.25);
+  #depthLabel{font-size:10px;letter-spacing:1px;color:#86efac;width:64px;}
+  #depthTrack{flex:1;height:10px;background:rgba(45,212,130,0.12);border:1px solid rgba(45,212,130,0.25);
     border-radius:2px;overflow:hidden;position:relative;}
-  #depthFill{height:100%;width:0%;background:#22d3ee;box-shadow:0 0 10px rgba(34,211,238,0.8);transition:width .08s linear,background .15s;}
+  #depthFill{height:100%;width:0%;background:#2dd47a;box-shadow:0 0 10px rgba(45,212,130,0.8);transition:width .08s linear,background .15s;}
   #depthGoal{position:absolute;top:-2px;bottom:-2px;left:66%;width:2px;background:#fbbf24;box-shadow:0 0 6px #fbbf24;}
   #angleVal{font-size:13px;font-weight:800;width:50px;text-align:right;font-variant-numeric:tabular-nums;
-    color:#22d3ee;text-shadow:0 0 8px rgba(34,211,238,0.6);}
+    color:#2dd47a;text-shadow:0 0 8px rgba(45,212,130,0.6);}
 
   /* 오버레이 화면 */
   .screen{position:absolute;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;
     text-align:center;padding:30px;background:radial-gradient(ellipse at center,#0b1220,#020617);}
   .screen.hidden{display:none;}
-  .bigEmoji{font-size:58px;margin-bottom:16px;filter:drop-shadow(0 0 16px rgba(34,211,238,0.6));}
+  .bigEmoji{font-size:58px;margin-bottom:16px;filter:drop-shadow(0 0 16px rgba(45,212,130,0.6));}
   .screen h1{font-size:25px;font-weight:800;margin-bottom:12px;color:#e0f2fe;letter-spacing:1px;}
   .screen p{font-size:14px;line-height:1.7;color:#94a3b8;max-width:330px;margin-bottom:8px;}
-  .screen p b{color:#22d3ee;}
-  .privacy{font-size:11px;color:#7dd3fc;background:rgba(34,211,238,0.07);border:1px solid rgba(34,211,238,0.2);
+  .screen p b{color:#2dd47a;}
+  .privacy{font-size:11px;color:#86efac;background:rgba(45,212,130,0.07);border:1px solid rgba(45,212,130,0.2);
     border-radius:8px;padding:11px 14px;margin:16px 0 24px;max-width:330px;letter-spacing:0.3px;}
-  .btn{background:rgba(34,211,238,0.12);color:#67e8f9;border:1.5px solid #22d3ee;border-radius:10px;
+  .btn{background:rgba(45,212,130,0.12);color:#8affc1;border:1.5px solid #2dd47a;border-radius:10px;
     padding:16px 32px;font-size:17px;font-weight:800;font-family:inherit;cursor:pointer;letter-spacing:1px;
-    box-shadow:0 0 22px rgba(34,211,238,0.35);transition:transform .12s,background .15s;}
-  .btn:active{transform:scale(0.96);background:rgba(34,211,238,0.22);}
-  .btn.ghost{background:transparent;box-shadow:none;border-color:rgba(34,211,238,0.4);color:#7dd3fc;margin-top:12px;}
+    box-shadow:0 0 22px rgba(45,212,130,0.35);transition:transform .12s,background .15s;}
+  .btn:active{transform:scale(0.96);background:rgba(45,212,130,0.22);}
+  .btn.ghost{background:transparent;box-shadow:none;border-color:rgba(45,212,130,0.4);color:#86efac;margin-top:12px;}
 
   #targetPick{display:flex;gap:12px;margin:8px 0 20px;}
-  .tgt{width:64px;height:56px;border-radius:10px;border:1.5px solid rgba(34,211,238,0.3);background:rgba(34,211,238,0.06);
-    color:#7dd3fc;font-size:21px;font-weight:800;font-family:inherit;cursor:pointer;}
-  .tgt.on{border-color:#22d3ee;background:rgba(34,211,238,0.18);color:#22d3ee;box-shadow:0 0 14px rgba(34,211,238,0.4);}
+  .tgt{width:64px;height:56px;border-radius:10px;border:1.5px solid rgba(45,212,130,0.3);background:rgba(45,212,130,0.06);
+    color:#86efac;font-size:21px;font-weight:800;font-family:inherit;cursor:pointer;}
+  .tgt.on{border-color:#2dd47a;background:rgba(45,212,130,0.18);color:#2dd47a;box-shadow:0 0 14px rgba(45,212,130,0.4);}
 
   #countdown{position:absolute;inset:0;z-index:25;display:flex;align-items:center;justify-content:center;
-    background:rgba(2,6,23,0.45);font-size:130px;font-weight:800;color:#22d3ee;text-shadow:0 0 30px rgba(34,211,238,0.8);}
+    background:rgba(2,6,23,0.45);font-size:130px;font-weight:800;color:#2dd47a;text-shadow:0 0 30px rgba(45,212,130,0.8);}
   #countdown.hidden{display:none;}
 
-  .spinner{width:44px;height:44px;border:3px solid rgba(34,211,238,0.2);border-top-color:#22d3ee;border-radius:50%;
-    animation:spin .8s linear infinite;margin-bottom:18px;box-shadow:0 0 18px rgba(34,211,238,0.4);}
+  .spinner{width:44px;height:44px;border:3px solid rgba(45,212,130,0.2);border-top-color:#2dd47a;border-radius:50%;
+    animation:spin .8s linear infinite;margin-bottom:18px;box-shadow:0 0 18px rgba(45,212,130,0.4);}
   @keyframes spin{to{transform:rotate(360deg);}}
 
   #flash{position:absolute;inset:0;z-index:5;background:radial-gradient(ellipse at center,rgba(52,211,153,0.4),transparent 70%);
@@ -202,7 +202,7 @@ async function loadModels(){
 }
 
 async function openCamera(){
-  stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:'user', width:{ideal:720} }, audio:false });
+  stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:'user', width:{ideal:1080}, height:{ideal:1920}, aspectRatio:{ideal:0.5625} }, audio:false });
   video.srcObject=stream;
   await new Promise(r=>{ video.onloadedmetadata=()=>{ video.play(); r(); }; });
   canvas.width=video.videoWidth; canvas.height=video.videoHeight;
@@ -227,21 +227,38 @@ function loop(){
 function drawFace(f){
   ctx.save();
   ctx.shadowBlur=0;
-  drawUtils.drawConnectors(f, FaceLandmarker.FACE_LANDMARKS_TESSELATION, {color:'rgba(34,211,238,0.22)', lineWidth:0.5});
-  ctx.shadowColor='#22d3ee'; ctx.shadowBlur=8;
-  drawUtils.drawConnectors(f, FaceLandmarker.FACE_LANDMARKS_FACE_OVAL, {color:'#67e8f9', lineWidth:1.4});
-  drawUtils.drawConnectors(f, FaceLandmarker.FACE_LANDMARKS_LEFT_EYE, {color:'#22d3ee', lineWidth:1.2});
-  drawUtils.drawConnectors(f, FaceLandmarker.FACE_LANDMARKS_RIGHT_EYE, {color:'#22d3ee', lineWidth:1.2});
-  drawUtils.drawConnectors(f, FaceLandmarker.FACE_LANDMARKS_LIPS, {color:'#7dd3fc', lineWidth:1.2});
+  drawUtils.drawConnectors(f, FaceLandmarker.FACE_LANDMARKS_TESSELATION, {color:'rgba(45,212,130,0.22)', lineWidth:0.5});
+  ctx.shadowColor='#2dd47a'; ctx.shadowBlur=8;
+  drawUtils.drawConnectors(f, FaceLandmarker.FACE_LANDMARKS_FACE_OVAL, {color:'#8affc1', lineWidth:1.4});
+  drawUtils.drawConnectors(f, FaceLandmarker.FACE_LANDMARKS_LEFT_EYE, {color:'#2dd47a', lineWidth:1.2});
+  drawUtils.drawConnectors(f, FaceLandmarker.FACE_LANDMARKS_RIGHT_EYE, {color:'#2dd47a', lineWidth:1.2});
+  drawUtils.drawConnectors(f, FaceLandmarker.FACE_LANDMARKS_LIPS, {color:'#86efac', lineWidth:1.2});
   ctx.restore();
 }
 
+// 졸라맨 X — 얼굴/손가락 잔점 빼고 몸통·팔·다리 뼈대만 글로우 + 관절 노드
+const BODY=[[11,12],[11,23],[12,24],[23,24],[11,13],[13,15],[12,14],[14,16],[23,25],[25,27],[24,26],[26,28],[27,31],[28,32]];
+const MAJOR=[11,12,13,14,15,16,23,24,25,26,27,28];
+function px(p){ return [p.x*canvas.width, p.y*canvas.height]; }
+function vis(p){ return p && (p.visibility===undefined || p.visibility>0.5); }
 function drawPose(lm){
   ctx.save();
-  ctx.shadowColor='#22d3ee'; ctx.shadowBlur=16;
-  drawUtils.drawConnectors(lm, PoseLandmarker.POSE_CONNECTIONS, {color:'#67e8f9', lineWidth:4});
-  ctx.shadowBlur=12;
-  drawUtils.drawLandmarks(lm, {color:'#cffafe', fillColor:'#22d3ee', radius:5, lineWidth:1});
+  ctx.lineCap='round'; ctx.lineJoin='round';
+  // 1) 굵고 부드러운 외곽 글로우
+  ctx.shadowColor='#2dd47a'; ctx.shadowBlur=18;
+  ctx.strokeStyle='rgba(45,212,130,0.30)'; ctx.lineWidth=11;
+  BODY.forEach(c=>{ if(vis(lm[c[0]])&&vis(lm[c[1]])){ const a=px(lm[c[0]]),b=px(lm[c[1]]);
+    ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.stroke(); }});
+  // 2) 밝은 코어 라인
+  ctx.shadowBlur=10; ctx.strokeStyle='#8affc1'; ctx.lineWidth=3;
+  BODY.forEach(c=>{ if(vis(lm[c[0]])&&vis(lm[c[1]])){ const a=px(lm[c[0]]),b=px(lm[c[1]]);
+    ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.stroke(); }});
+  // 3) 관절 노드 (헤일로 + 링 + 코어)
+  ctx.shadowColor='#2dd47a'; ctx.shadowBlur=12;
+  MAJOR.forEach(i=>{ if(!vis(lm[i])) return; const q=px(lm[i]);
+    ctx.beginPath(); ctx.arc(q[0],q[1],9,0,6.2832); ctx.fillStyle='rgba(45,212,130,0.22)'; ctx.fill();
+    ctx.beginPath(); ctx.arc(q[0],q[1],6,0,6.2832); ctx.strokeStyle='#6ee7b7'; ctx.lineWidth=2.5; ctx.stroke();
+    ctx.shadowBlur=0; ctx.beginPath(); ctx.arc(q[0],q[1],2.6,0,6.2832); ctx.fillStyle='#eafff4'; ctx.fill(); ctx.shadowBlur=12; });
   ctx.restore();
 }
 
@@ -254,8 +271,8 @@ function kneeAngle(lm){
 }
 function setDepth(pct,deg){
   const f=$('depthFill'); f.style.width=Math.max(0,Math.min(100,pct))+'%';
-  f.style.background = pct>=66?'#34d399':(pct>=33?'#fbbf24':'#22d3ee');
-  f.style.boxShadow='0 0 10px '+(pct>=66?'rgba(52,211,153,0.8)':'rgba(34,211,238,0.8)');
+  f.style.background = pct>=66?'#34d399':(pct>=33?'#fbbf24':'#2dd47a');
+  f.style.boxShadow='0 0 10px '+(pct>=66?'rgba(52,211,153,0.8)':'rgba(45,212,130,0.8)');
   $('angleVal').textContent = deg==null?'–°':Math.round(deg)+'°';
 }
 function processSquat(lm){
@@ -294,7 +311,7 @@ async function start(){
 }
 function begin(){
   count=0; state='up'; reachedDepth=false; $('bigCount').textContent='0'; $('chipNow').textContent='0';
-  return countdown().then(()=>{ running=true; lastT=-1; setFeedback('시작! 천천히 정확하게 🦿','#67e8f9'); loop(); });
+  return countdown().then(()=>{ running=true; lastT=-1; setFeedback('시작! 천천히 정확하게 🦿','#8affc1'); loop(); });
 }
 function countdown(){ return new Promise(res=>{ const el=$('countdown'); let n=3;
   el.textContent=n; el.classList.remove('hidden'); beep(440,0.1);
