@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#6f9ad0">
+<title>AI 스쿼트 코치</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;background:#0f172a;font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;overflow:hidden;color:#fff;}
+  #app{position:fixed;inset:0;}
+
+  /* 카메라 + 골격 */
+  #stage{position:absolute;inset:0;background:#000;overflow:hidden;}
+  #cam,#overlay{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1);}
+  #overlay{object-fit:fill;}
+
+  /* 상단 바 */
+  #topbar{position:absolute;top:0;left:0;right:0;padding:calc(env(safe-area-inset-top) + 10px) 14px 10px;
+    display:flex;justify-content:space-between;align-items:center;
+    background:linear-gradient(180deg,rgba(15,23,42,0.78),rgba(15,23,42,0));z-index:5;pointer-events:none;}
+  #title{font-size:16px;font-weight:800;display:flex;align-items:center;gap:6px;}
+  #counterChip{background:rgba(255,255,255,0.16);backdrop-filter:blur(6px);border-radius:999px;
+    padding:7px 16px;font-size:15px;font-weight:800;font-variant-numeric:tabular-nums;}
+  #counterChip b{font-size:20px;color:#fbbf24;}
+
+  /* 큰 카운터 */
+  #bigCount{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+    font-size:140px;font-weight:900;color:rgba(255,255,255,0.92);font-variant-numeric:tabular-nums;
+    text-shadow:0 4px 24px rgba(0,0,0,0.5);z-index:4;line-height:1;pointer-events:none;opacity:0.95;}
+  #bigCount.pop{animation:pop .35s cubic-bezier(.2,1.4,.4,1);}
+  @keyframes pop{0%{transform:translate(-50%,-50%) scale(1);}45%{transform:translate(-50%,-50%) scale(1.35);}100%{transform:translate(-50%,-50%) scale(1);}}
+
+  /* 하단 피드백 + 깊이 게이지 */
+  #bottom{position:absolute;left:0;right:0;bottom:0;padding:14px 16px calc(env(safe-area-inset-bottom) + 16px);
+    background:linear-gradient(0deg,rgba(15,23,42,0.85),rgba(15,23,42,0));z-index:5;}
+  #feedback{text-align:center;font-size:19px;font-weight:800;margin-bottom:12px;min-height:26px;
+    text-shadow:0 2px 10px rgba(0,0,0,0.6);transition:color .15s;}
+  #depthWrap{display:flex;align-items:center;gap:10px;}
+  #depthLabel{font-size:12px;font-weight:700;color:#cbd5e1;width:54px;}
+  #depthTrack{flex:1;height:14px;background:rgba(255,255,255,0.18);border-radius:999px;overflow:hidden;position:relative;}
+  #depthFill{height:100%;width:0%;background:#10b981;border-radius:999px;transition:width .08s linear,background .15s;}
+  #depthGoal{position:absolute;top:-3px;bottom:-3px;left:66%;width:3px;background:#fbbf24;border-radius:2px;}
+  #angleVal{font-size:13px;font-weight:800;width:48px;text-align:right;font-variant-numeric:tabular-nums;color:#e2e8f0;}
+
+  /* 오버레이(시작/완료/로딩/에러) */
+  .screen{position:absolute;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;padding:28px;background:linear-gradient(160deg,#1e293b,#0f172a);}
+  .screen.hidden{display:none;}
+  .bigEmoji{font-size:60px;margin-bottom:14px;}
+  .screen h1{font-size:26px;font-weight:900;margin-bottom:10px;}
+  .screen p{font-size:15px;line-height:1.6;color:#cbd5e1;max-width:320px;margin-bottom:8px;}
+  .privacy{font-size:12px;color:#94a3b8;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);
+    border-radius:12px;padding:10px 14px;margin:14px 0 22px;max-width:320px;}
+  .btn{background:linear-gradient(135deg,#8fb6e4,#6f9ad0);color:#fff;border:none;border-radius:16px;
+    padding:17px 34px;font-size:18px;font-weight:800;cursor:pointer;box-shadow:0 6px 20px rgba(111,154,208,0.4);
+    transition:transform .12s;}
+  .btn:active{transform:scale(0.96);}
+  .btn.ghost{background:rgba(255,255,255,0.12);box-shadow:none;margin-top:12px;}
+
+  /* 목표 선택 */
+  #targetPick{display:flex;gap:10px;margin:6px 0 18px;}
+  .tgt{width:62px;height:54px;border-radius:14px;border:2px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.06);
+    color:#fff;font-size:20px;font-weight:800;cursor:pointer;}
+  .tgt.on{border-color:#fbbf24;background:rgba(251,191,36,0.18);color:#fbbf24;}
+
+  /* 카운트다운 */
+  #countdown{position:absolute;inset:0;z-index:25;display:flex;align-items:center;justify-content:center;
+    background:rgba(15,23,42,0.55);font-size:130px;font-weight:900;color:#fff;}
+  #countdown.hidden{display:none;}
+
+  .spinner{width:42px;height:42px;border:4px solid rgba(255,255,255,0.25);border-top-color:#8fb6e4;border-radius:50%;
+    animation:spin .8s linear infinite;margin-bottom:18px;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  /* 좋은 횟수 플래시 */
+  #flash{position:absolute;inset:0;z-index:6;background:#10b981;opacity:0;pointer-events:none;}
+  #flash.go{animation:flash .45s ease-out;}
+  @keyframes flash{0%{opacity:0;}25%{opacity:0.28;}100%{opacity:0;}}
+
+  @media(prefers-reduced-motion:reduce){*{animation-duration:0.01ms !important;}}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="stage">
+    <video id="cam" autoplay playsinline muted></video>
+    <canvas id="overlay"></canvas>
+    <div id="flash"></div>
+  </div>
+
+  <div id="topbar">
+    <div id="title">🦵 스쿼트</div>
+    <div id="counterChip"><b id="chipNow">0</b> / <span id="chipTgt">15</span></div>
+  </div>
+
+  <div id="bigCount">0</div>
+
+  <div id="bottom">
+    <div id="feedback">준비됐어요!</div>
+    <div id="depthWrap">
+      <span id="depthLabel">앉은 깊이</span>
+      <div id="depthTrack"><div id="depthFill"></div><div id="depthGoal"></div></div>
+      <span id="angleVal">–°</span>
+    </div>
+  </div>
+
+  <div id="countdown" class="hidden">3</div>
+
+  <!-- 시작 화면 -->
+  <div id="startScreen" class="screen">
+    <div class="bigEmoji">🦵</div>
+    <h1>AI 스쿼트 코치</h1>
+    <p>카메라가 무릎 각도를 보고 <b style="color:#fbbf24">제대로 앉은 스쿼트만</b> 세줍니다.</p>
+    <p style="font-size:13px;color:#94a3b8;">📱 전신이 보이게 폰을 세로로 세워두고 1.5~2m 떨어지세요.</p>
+    <div id="targetPick">
+      <button class="tgt" data-n="10">10</button>
+      <button class="tgt on" data-n="15">15</button>
+      <button class="tgt" data-n="20">20</button>
+    </div>
+    <div class="privacy">🔒 영상은 <b>이 기기 안에서만</b> 분석돼요. 어디에도 저장·전송되지 않습니다.</div>
+    <button class="btn" id="startBtn">▶ 카메라 켜고 시작</button>
+  </div>
+
+  <!-- 로딩 -->
+  <div id="loadScreen" class="screen hidden">
+    <div class="spinner"></div>
+    <p id="loadMsg">AI 자세 분석 준비 중…</p>
+  </div>
+
+  <!-- 완료 -->
+  <div id="doneScreen" class="screen hidden">
+    <div class="bigEmoji">🎉</div>
+    <h1 id="doneTitle">15개 완료!</h1>
+    <p id="doneSub">정확한 자세로 끝까지 해냈어요. 최고예요! 💪</p>
+    <button class="btn" id="againBtn">↻ 다시 하기</button>
+  </div>
+
+  <!-- 에러 -->
+  <div id="errScreen" class="screen hidden">
+    <div class="bigEmoji">😢</div>
+    <h1>카메라를 열 수 없어요</h1>
+    <p id="errMsg"></p>
+    <button class="btn ghost" id="retryBtn">다시 시도</button>
+  </div>
+</div>
+
+<script type="module">
+import { PoseLandmarker, FilesetResolver, DrawingUtils }
+  from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
+
+const $ = id => document.getElementById(id);
+const video=$('cam'), canvas=$('overlay'), ctx=canvas.getContext('2d');
+const drawUtils = new DrawingUtils(ctx);
+
+let poseLandmarker=null, stream=null, running=false, target=15;
+let count=0, state='up', reachedDepth=false, lastVideoTime=-1, audioCtx=null;
+
+// 무릎 각도 임계값
+const DEEP=100;   // 이 이하로 앉으면 "깊이 충분"
+const STAND=160;  // 이 이상이면 "섰다"
+
+// ---------- 유틸 ----------
+function angle(a,b,c){
+  const v1={x:a.x-b.x,y:a.y-b.y}, v2={x:c.x-b.x,y:c.y-b.y};
+  const dot=v1.x*v2.x+v1.y*v2.y;
+  const m=Math.hypot(v1.x,v1.y)*Math.hypot(v2.x,v2.y);
+  if(!m) return 180;
+  let cos=Math.min(1,Math.max(-1,dot/m));
+  return Math.acos(cos)*180/Math.PI;
+}
+function beep(freq,dur){
+  try{
+    if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+    const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+    o.frequency.value=freq; o.connect(g); g.connect(audioCtx.destination);
+    g.gain.setValueAtTime(0.001,audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.3,audioCtx.currentTime+0.01);
+    g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+dur);
+    o.start(); o.stop(audioCtx.currentTime+dur);
+  }catch(e){}
+}
+function buzz(p){ if(navigator.vibrate){ try{navigator.vibrate(p);}catch(e){} } }
+function setFeedback(t,c){ $('feedback').textContent=t; $('feedback').style.color=c; }
+
+// ---------- 모델 ----------
+async function loadModel(){
+  if(poseLandmarker) return;
+  const vision = await FilesetResolver.forVisionTasks(
+    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
+  poseLandmarker = await PoseLandmarker.createFromOptions(vision,{
+    baseOptions:{
+      modelAssetPath:"https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
+      delegate:"GPU"
+    },
+    runningMode:"VIDEO", numPoses:1
+  });
+}
+
+// ---------- 카메라 ----------
+async function openCamera(){
+  stream = await navigator.mediaDevices.getUserMedia({
+    video:{ facingMode:'user', width:{ideal:720}, height:{ideal:1280} }, audio:false
+  });
+  video.srcObject=stream;
+  await new Promise(r=>{ video.onloadedmetadata=()=>{ video.play(); r(); }; });
+  canvas.width=video.videoWidth; canvas.height=video.videoHeight;
+}
+
+// ---------- 메인 루프 ----------
+function loop(){
+  if(!running) return;
+  if(video.currentTime!==lastVideoTime){
+    lastVideoTime=video.currentTime;
+    const res = poseLandmarker.detectForVideo(video, performance.now());
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    if(res.landmarks && res.landmarks.length){
+      const lm=res.landmarks[0];
+      drawSkeleton(lm);
+      processSquat(lm);
+    }else{
+      setFeedback('몸이 안 보여요 — 뒤로 물러나세요', '#fbbf24');
+      setDepth(0,null);
+    }
+  }
+  requestAnimationFrame(loop);
+}
+
+function drawSkeleton(lm){
+  drawUtils.drawConnectors(lm, PoseLandmarker.POSE_CONNECTIONS, {color:'rgba(143,182,228,0.9)', lineWidth:4});
+  drawUtils.drawLandmarks(lm, {color:'#fbbf24', fillColor:'#fff', radius:3, lineWidth:1});
+}
+
+function kneeAngle(lm){
+  // 좌:23-25-27, 우:24-26-28
+  const vis=(p)=> p && (p.visibility===undefined || p.visibility>0.5);
+  let angles=[];
+  if(vis(lm[23])&&vis(lm[25])&&vis(lm[27])) angles.push(angle(lm[23],lm[25],lm[27]));
+  if(vis(lm[24])&&vis(lm[26])&&vis(lm[28])) angles.push(angle(lm[24],lm[26],lm[28]));
+  if(!angles.length) return null;
+  return angles.reduce((a,b)=>a+b,0)/angles.length;
+}
+
+function setDepth(pct,angleDeg){
+  const fill=$('depthFill');
+  fill.style.width=Math.max(0,Math.min(100,pct))+'%';
+  fill.style.background = pct>=66 ? '#10b981' : (pct>=33 ? '#fbbf24' : '#94a3b8');
+  $('angleVal').textContent = angleDeg==null ? '–°' : Math.round(angleDeg)+'°';
+}
+
+function processSquat(lm){
+  const a = kneeAngle(lm);
+  if(a==null){ setFeedback('다리가 안 보여요 — 전신이 나오게', '#fbbf24'); setDepth(0,null); return; }
+
+  // 각도 170(섬)→90(깊음) 을 0~100% 깊이로 환산
+  const pct = (170 - a) / (170 - 90) * 100;
+  setDepth(pct, a);
+
+  if(state==='up'){
+    if(a <= DEEP){ state='down'; reachedDepth=true; }
+    else if(a < STAND){ setFeedback('조금 더 깊이 앉아요 ⬇️', '#fbbf24'); }
+    else { setFeedback('좋아요, 일어선 자세 ✅', '#a7f3d0'); }
+  }else{ // down
+    if(a <= DEEP){ setFeedback('완벽한 깊이! 이제 일어서요 ⬆️', '#34d399'); }
+    else if(a >= STAND){
+      // 일어섬 → 1회 인정 (깊이 도달했을 때만)
+      state='up';
+      if(reachedDepth){ goodRep(); }
+      reachedDepth=false;
+    }
+  }
+}
+
+function goodRep(){
+  count++;
+  $('bigCount').textContent=count;
+  $('chipNow').textContent=count;
+  $('bigCount').classList.remove('pop'); void $('bigCount').offsetWidth; $('bigCount').classList.add('pop');
+  $('flash').classList.remove('go'); void $('flash').offsetWidth; $('flash').classList.add('go');
+  setFeedback('좋아요! 정확해요 👏', '#34d399');
+  beep(660,0.12); buzz(40);
+  if(count>=target) finish();
+}
+
+function finish(){
+  running=false;
+  beep(880,0.3); buzz([0,80,50,80]);
+  $('doneTitle').textContent=target+'개 완료!';
+  $('doneScreen').classList.remove('hidden');
+}
+
+// ---------- 흐름 ----------
+async function start(){
+  $('startScreen').classList.add('hidden');
+  $('loadScreen').classList.remove('hidden');
+  try{
+    $('loadMsg').textContent='AI 자세 분석 준비 중…';
+    await loadModel();
+    $('loadMsg').textContent='카메라 켜는 중…';
+    await openCamera();
+  }catch(e){
+    $('loadScreen').classList.add('hidden');
+    showError(e);
+    return;
+  }
+  $('loadScreen').classList.add('hidden');
+  count=0; state='up'; reachedDepth=false;
+  $('bigCount').textContent='0'; $('chipNow').textContent='0';
+  await countdown();
+  running=true; lastVideoTime=-1;
+  setFeedback('시작! 천천히 정확하게 🦵', '#a7f3d0');
+  loop();
+}
+
+function countdown(){
+  return new Promise(res=>{
+    const el=$('countdown'); let n=3;
+    el.textContent=n; el.classList.remove('hidden'); beep(440,0.1);
+    const t=setInterval(()=>{
+      n--;
+      if(n<=0){ clearInterval(t); el.classList.add('hidden'); res(); }
+      else { el.textContent=n; beep(440,0.1); buzz(20); }
+    },800);
+  });
+}
+
+function showError(e){
+  let msg='카메라 권한을 허용해 주세요. (설정 → 사이트 권한 → 카메라)';
+  if(e && e.name==='NotAllowedError') msg='카메라 사용을 허용하지 않았어요. 브라우저 주소창의 카메라 아이콘에서 허용해 주세요.';
+  else if(e && e.name==='NotFoundError') msg='카메라를 찾을 수 없어요. 모바일에서 열어주세요.';
+  else if(location.protocol!=='https:' && location.hostname!=='localhost') msg='카메라는 https 주소에서만 작동해요. (깃허브 페이지 주소로 접속)';
+  else if(e && e.message) msg=e.message;
+  $('errMsg').textContent=msg;
+  $('errScreen').classList.remove('hidden');
+}
+
+// 목표 선택
+document.querySelectorAll('.tgt').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.tgt').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); target=+b.dataset.n; $('chipTgt').textContent=target;
+}));
+
+$('startBtn').addEventListener('click',start);
+$('againBtn').addEventListener('click',()=>{ $('doneScreen').classList.add('hidden'); restart(); });
+$('retryBtn').addEventListener('click',()=>{ $('errScreen').classList.add('hidden'); start(); });
+
+async function restart(){
+  count=0; state='up'; reachedDepth=false;
+  $('bigCount').textContent='0'; $('chipNow').textContent='0';
+  await countdown();
+  running=true; lastVideoTime=-1;
+  setFeedback('시작! 천천히 정확하게 🦵', '#a7f3d0');
+  loop();
+}
+</script>
+</body>
+</html>
