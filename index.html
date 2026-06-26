@@ -3,80 +3,100 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#6f9ad0">
+<meta name="theme-color" content="#020617">
 <title>AI 스쿼트 코치</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-  html,body{height:100%;background:#0f172a;font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;overflow:hidden;color:#fff;}
+  html,body{height:100%;background:#020617;font-family:'SF Mono',ui-monospace,'Menlo','Consolas',monospace;overflow:hidden;color:#e0f2fe;}
   #app{position:fixed;inset:0;}
 
-  /* 카메라 + 골격 */
+  /* 카메라(어둡게) + 골격(밝게) */
   #stage{position:absolute;inset:0;background:#000;overflow:hidden;}
-  #cam,#overlay{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1);}
-  #overlay{object-fit:fill;}
+  #cam{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;transform:scaleX(-1);
+    filter:brightness(0.34) contrast(1.08) saturate(0.7);}
+  #overlay{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;transform:scaleX(-1);}
+  /* 비네트 + 스캔 글로우 */
+  #vignette{position:absolute;inset:0;z-index:2;pointer-events:none;
+    background:radial-gradient(ellipse at center,transparent 38%,rgba(2,6,23,0.55) 100%);}
+  #scan{position:absolute;left:0;right:0;height:2px;z-index:3;pointer-events:none;
+    background:linear-gradient(90deg,transparent,rgba(34,211,238,0.65),transparent);
+    box-shadow:0 0 14px 2px rgba(34,211,238,0.5);animation:scan 3.6s linear infinite;}
+  @keyframes scan{0%{top:8%;}50%{top:88%;}100%{top:8%;}}
 
-  /* 상단 바 */
-  #topbar{position:absolute;top:0;left:0;right:0;padding:calc(env(safe-area-inset-top) + 10px) 14px 10px;
-    display:flex;justify-content:space-between;align-items:center;
-    background:linear-gradient(180deg,rgba(15,23,42,0.78),rgba(15,23,42,0));z-index:5;pointer-events:none;}
-  #title{font-size:16px;font-weight:800;display:flex;align-items:center;gap:6px;}
-  #counterChip{background:rgba(255,255,255,0.16);backdrop-filter:blur(6px);border-radius:999px;
-    padding:7px 16px;font-size:15px;font-weight:800;font-variant-numeric:tabular-nums;}
-  #counterChip b{font-size:20px;color:#fbbf24;}
+  /* HUD 프레임 코너 */
+  .corner{position:absolute;width:34px;height:34px;border:2px solid rgba(34,211,238,0.6);z-index:4;pointer-events:none;}
+  .corner.tl{top:14px;left:14px;border-right:none;border-bottom:none;}
+  .corner.tr{top:14px;right:14px;border-left:none;border-bottom:none;}
+  .corner.bl{bottom:14px;left:14px;border-right:none;border-top:none;}
+  .corner.br{bottom:14px;right:14px;border-left:none;border-top:none;}
 
-  /* 큰 카운터 */
-  #bigCount{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-    font-size:140px;font-weight:900;color:rgba(255,255,255,0.92);font-variant-numeric:tabular-nums;
-    text-shadow:0 4px 24px rgba(0,0,0,0.5);z-index:4;line-height:1;pointer-events:none;opacity:0.95;}
-  #bigCount.pop{animation:pop .35s cubic-bezier(.2,1.4,.4,1);}
-  @keyframes pop{0%{transform:translate(-50%,-50%) scale(1);}45%{transform:translate(-50%,-50%) scale(1.35);}100%{transform:translate(-50%,-50%) scale(1);}}
+  /* 상단 HUD */
+  #topbar{position:absolute;top:0;left:0;right:0;padding:calc(env(safe-area-inset-top) + 18px) 22px 10px;
+    display:flex;justify-content:space-between;align-items:flex-start;z-index:6;pointer-events:none;}
+  #sysLabel{font-size:11px;letter-spacing:1.5px;color:#67e8f9;text-shadow:0 0 8px rgba(34,211,238,0.7);}
+  #sysLabel .rec{color:#f87171;}
+  #sysLabel .sub{display:block;font-size:9px;color:#7dd3fc;opacity:0.7;margin-top:3px;letter-spacing:1px;}
+  #counterChip{text-align:right;}
+  #counterChip .n{font-size:30px;font-weight:800;color:#22d3ee;text-shadow:0 0 14px rgba(34,211,238,0.8);
+    font-variant-numeric:tabular-nums;line-height:1;}
+  #counterChip .t{font-size:11px;color:#7dd3fc;letter-spacing:1px;}
 
-  /* 하단 피드백 + 깊이 게이지 */
-  #bottom{position:absolute;left:0;right:0;bottom:0;padding:14px 16px calc(env(safe-area-inset-bottom) + 16px);
-    background:linear-gradient(0deg,rgba(15,23,42,0.85),rgba(15,23,42,0));z-index:5;}
-  #feedback{text-align:center;font-size:19px;font-weight:800;margin-bottom:12px;min-height:26px;
-    text-shadow:0 2px 10px rgba(0,0,0,0.6);transition:color .15s;}
-  #depthWrap{display:flex;align-items:center;gap:10px;}
-  #depthLabel{font-size:12px;font-weight:700;color:#cbd5e1;width:54px;}
-  #depthTrack{flex:1;height:14px;background:rgba(255,255,255,0.18);border-radius:999px;overflow:hidden;position:relative;}
-  #depthFill{height:100%;width:0%;background:#10b981;border-radius:999px;transition:width .08s linear,background .15s;}
-  #depthGoal{position:absolute;top:-3px;bottom:-3px;left:66%;width:3px;background:#fbbf24;border-radius:2px;}
-  #angleVal{font-size:13px;font-weight:800;width:48px;text-align:right;font-variant-numeric:tabular-nums;color:#e2e8f0;}
+  /* 큰 카운터(중앙 뒤) */
+  #bigCount{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:5;pointer-events:none;
+    font-size:150px;font-weight:800;color:rgba(34,211,238,0.16);font-variant-numeric:tabular-nums;line-height:1;}
+  #bigCount.pop{animation:pop .4s cubic-bezier(.2,1.5,.4,1);}
+  @keyframes pop{0%{transform:translate(-50%,-50%) scale(1);color:rgba(34,211,238,0.16);}
+    45%{transform:translate(-50%,-50%) scale(1.3);color:rgba(52,211,153,0.5);}
+    100%{transform:translate(-50%,-50%) scale(1);color:rgba(34,211,238,0.16);}}
 
-  /* 오버레이(시작/완료/로딩/에러) */
+  /* 하단 HUD */
+  #bottom{position:absolute;left:0;right:0;bottom:0;z-index:6;
+    padding:16px 22px calc(env(safe-area-inset-bottom) + 22px);
+    background:linear-gradient(0deg,rgba(2,6,23,0.9),transparent);}
+  #feedback{text-align:center;font-size:17px;font-weight:700;margin-bottom:14px;min-height:24px;letter-spacing:0.5px;
+    color:#67e8f9;text-shadow:0 0 10px rgba(34,211,238,0.5);transition:color .15s;}
+  #depthWrap{display:flex;align-items:center;gap:12px;}
+  #depthLabel{font-size:10px;letter-spacing:1px;color:#7dd3fc;width:64px;}
+  #depthTrack{flex:1;height:10px;background:rgba(34,211,238,0.12);border:1px solid rgba(34,211,238,0.25);
+    border-radius:2px;overflow:hidden;position:relative;}
+  #depthFill{height:100%;width:0%;background:#22d3ee;box-shadow:0 0 10px rgba(34,211,238,0.8);transition:width .08s linear,background .15s;}
+  #depthGoal{position:absolute;top:-2px;bottom:-2px;left:66%;width:2px;background:#fbbf24;box-shadow:0 0 6px #fbbf24;}
+  #angleVal{font-size:13px;font-weight:800;width:50px;text-align:right;font-variant-numeric:tabular-nums;
+    color:#22d3ee;text-shadow:0 0 8px rgba(34,211,238,0.6);}
+
+  /* 오버레이 화면 */
   .screen{position:absolute;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;
-    text-align:center;padding:28px;background:linear-gradient(160deg,#1e293b,#0f172a);}
+    text-align:center;padding:30px;background:radial-gradient(ellipse at center,#0b1220,#020617);}
   .screen.hidden{display:none;}
-  .bigEmoji{font-size:60px;margin-bottom:14px;}
-  .screen h1{font-size:26px;font-weight:900;margin-bottom:10px;}
-  .screen p{font-size:15px;line-height:1.6;color:#cbd5e1;max-width:320px;margin-bottom:8px;}
-  .privacy{font-size:12px;color:#94a3b8;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);
-    border-radius:12px;padding:10px 14px;margin:14px 0 22px;max-width:320px;}
-  .btn{background:linear-gradient(135deg,#8fb6e4,#6f9ad0);color:#fff;border:none;border-radius:16px;
-    padding:17px 34px;font-size:18px;font-weight:800;cursor:pointer;box-shadow:0 6px 20px rgba(111,154,208,0.4);
-    transition:transform .12s;}
-  .btn:active{transform:scale(0.96);}
-  .btn.ghost{background:rgba(255,255,255,0.12);box-shadow:none;margin-top:12px;}
+  .bigEmoji{font-size:58px;margin-bottom:16px;filter:drop-shadow(0 0 16px rgba(34,211,238,0.6));}
+  .screen h1{font-size:25px;font-weight:800;margin-bottom:12px;color:#e0f2fe;letter-spacing:1px;}
+  .screen p{font-size:14px;line-height:1.7;color:#94a3b8;max-width:330px;margin-bottom:8px;}
+  .screen p b{color:#22d3ee;}
+  .privacy{font-size:11px;color:#7dd3fc;background:rgba(34,211,238,0.07);border:1px solid rgba(34,211,238,0.2);
+    border-radius:8px;padding:11px 14px;margin:16px 0 24px;max-width:330px;letter-spacing:0.3px;}
+  .btn{background:rgba(34,211,238,0.12);color:#67e8f9;border:1.5px solid #22d3ee;border-radius:10px;
+    padding:16px 32px;font-size:17px;font-weight:800;font-family:inherit;cursor:pointer;letter-spacing:1px;
+    box-shadow:0 0 22px rgba(34,211,238,0.35);transition:transform .12s,background .15s;}
+  .btn:active{transform:scale(0.96);background:rgba(34,211,238,0.22);}
+  .btn.ghost{background:transparent;box-shadow:none;border-color:rgba(34,211,238,0.4);color:#7dd3fc;margin-top:12px;}
 
-  /* 목표 선택 */
-  #targetPick{display:flex;gap:10px;margin:6px 0 18px;}
-  .tgt{width:62px;height:54px;border-radius:14px;border:2px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.06);
-    color:#fff;font-size:20px;font-weight:800;cursor:pointer;}
-  .tgt.on{border-color:#fbbf24;background:rgba(251,191,36,0.18);color:#fbbf24;}
+  #targetPick{display:flex;gap:12px;margin:8px 0 20px;}
+  .tgt{width:64px;height:56px;border-radius:10px;border:1.5px solid rgba(34,211,238,0.3);background:rgba(34,211,238,0.06);
+    color:#7dd3fc;font-size:21px;font-weight:800;font-family:inherit;cursor:pointer;}
+  .tgt.on{border-color:#22d3ee;background:rgba(34,211,238,0.18);color:#22d3ee;box-shadow:0 0 14px rgba(34,211,238,0.4);}
 
-  /* 카운트다운 */
   #countdown{position:absolute;inset:0;z-index:25;display:flex;align-items:center;justify-content:center;
-    background:rgba(15,23,42,0.55);font-size:130px;font-weight:900;color:#fff;}
+    background:rgba(2,6,23,0.45);font-size:130px;font-weight:800;color:#22d3ee;text-shadow:0 0 30px rgba(34,211,238,0.8);}
   #countdown.hidden{display:none;}
 
-  .spinner{width:42px;height:42px;border:4px solid rgba(255,255,255,0.25);border-top-color:#8fb6e4;border-radius:50%;
-    animation:spin .8s linear infinite;margin-bottom:18px;}
+  .spinner{width:44px;height:44px;border:3px solid rgba(34,211,238,0.2);border-top-color:#22d3ee;border-radius:50%;
+    animation:spin .8s linear infinite;margin-bottom:18px;box-shadow:0 0 18px rgba(34,211,238,0.4);}
   @keyframes spin{to{transform:rotate(360deg);}}
 
-  /* 좋은 횟수 플래시 */
-  #flash{position:absolute;inset:0;z-index:6;background:#10b981;opacity:0;pointer-events:none;}
-  #flash.go{animation:flash .45s ease-out;}
-  @keyframes flash{0%{opacity:0;}25%{opacity:0.28;}100%{opacity:0;}}
+  #flash{position:absolute;inset:0;z-index:5;background:radial-gradient(ellipse at center,rgba(52,211,153,0.4),transparent 70%);
+    opacity:0;pointer-events:none;}
+  #flash.go{animation:flash .5s ease-out;}
+  @keyframes flash{0%{opacity:0;}25%{opacity:1;}100%{opacity:0;}}
 
   @media(prefers-reduced-motion:reduce){*{animation-duration:0.01ms !important;}}
 </style>
@@ -86,20 +106,24 @@
   <div id="stage">
     <video id="cam" autoplay playsinline muted></video>
     <canvas id="overlay"></canvas>
+    <div id="vignette"></div>
+    <div id="scan"></div>
     <div id="flash"></div>
+    <div class="corner tl"></div><div class="corner tr"></div>
+    <div class="corner bl"></div><div class="corner br"></div>
   </div>
 
   <div id="topbar">
-    <div id="title">🦵 스쿼트</div>
-    <div id="counterChip"><b id="chipNow">0</b> / <span id="chipTgt">15</span></div>
+    <div id="sysLabel"><span class="rec">●</span> AI MOTION TRACKING<span class="sub">POSE · FACE MESH · ACTIVE</span></div>
+    <div id="counterChip"><div class="n" id="chipNow">0</div><div class="t">/ <span id="chipTgt">15</span> REPS</div></div>
   </div>
 
   <div id="bigCount">0</div>
 
   <div id="bottom">
-    <div id="feedback">준비됐어요!</div>
+    <div id="feedback">스탠바이…</div>
     <div id="depthWrap">
-      <span id="depthLabel">앉은 깊이</span>
+      <span id="depthLabel">SQUAT DEPTH</span>
       <div id="depthTrack"><div id="depthFill"></div><div id="depthGoal"></div></div>
       <span id="angleVal">–°</span>
     </div>
@@ -107,36 +131,32 @@
 
   <div id="countdown" class="hidden">3</div>
 
-  <!-- 시작 화면 -->
   <div id="startScreen" class="screen">
-    <div class="bigEmoji">🦵</div>
+    <div class="bigEmoji">🦿</div>
     <h1>AI 스쿼트 코치</h1>
-    <p>카메라가 무릎 각도를 보고 <b style="color:#fbbf24">제대로 앉은 스쿼트만</b> 세줍니다.</p>
-    <p style="font-size:13px;color:#94a3b8;">📱 전신이 보이게 폰을 세로로 세워두고 1.5~2m 떨어지세요.</p>
+    <p>AI가 <b>온몸의 관절 + 얼굴</b>을 실시간 추적해<br><b>제대로 앉은 스쿼트만</b> 카운트합니다.</p>
+    <p style="font-size:12px;color:#64748b;">📱 폰을 세로로 세워두고 <b>전신이 다 보이게</b> 1.5~2.5m 떨어지세요.</p>
     <div id="targetPick">
       <button class="tgt" data-n="10">10</button>
       <button class="tgt on" data-n="15">15</button>
       <button class="tgt" data-n="20">20</button>
     </div>
-    <div class="privacy">🔒 영상은 <b>이 기기 안에서만</b> 분석돼요. 어디에도 저장·전송되지 않습니다.</div>
-    <button class="btn" id="startBtn">▶ 카메라 켜고 시작</button>
+    <div class="privacy">🔒 영상은 <b>이 기기 안에서만</b> 분석돼요. 저장·전송 없음.</div>
+    <button class="btn" id="startBtn">▶ 스캔 시작</button>
   </div>
 
-  <!-- 로딩 -->
   <div id="loadScreen" class="screen hidden">
     <div class="spinner"></div>
-    <p id="loadMsg">AI 자세 분석 준비 중…</p>
+    <p id="loadMsg">AI 추적 엔진 로딩 중…</p>
   </div>
 
-  <!-- 완료 -->
   <div id="doneScreen" class="screen hidden">
     <div class="bigEmoji">🎉</div>
-    <h1 id="doneTitle">15개 완료!</h1>
+    <h1 id="doneTitle">15 REPS 완료!</h1>
     <p id="doneSub">정확한 자세로 끝까지 해냈어요. 최고예요! 💪</p>
     <button class="btn" id="againBtn">↻ 다시 하기</button>
   </div>
 
-  <!-- 에러 -->
   <div id="errScreen" class="screen hidden">
     <div class="bigEmoji">😢</div>
     <h1>카메라를 열 수 없어요</h1>
@@ -146,212 +166,156 @@
 </div>
 
 <script type="module">
-import { PoseLandmarker, FilesetResolver, DrawingUtils }
+import { PoseLandmarker, FaceLandmarker, FilesetResolver, DrawingUtils }
   from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
 
 const $ = id => document.getElementById(id);
 const video=$('cam'), canvas=$('overlay'), ctx=canvas.getContext('2d');
 const drawUtils = new DrawingUtils(ctx);
 
-let poseLandmarker=null, stream=null, running=false, target=15;
-let count=0, state='up', reachedDepth=false, lastVideoTime=-1, audioCtx=null;
+let pose=null, face=null, stream=null, running=false, target=15;
+let count=0, state='up', reachedDepth=false, lastT=-1, audioCtx=null;
+const DEEP=100, STAND=160;
 
-// 무릎 각도 임계값
-const DEEP=100;   // 이 이하로 앉으면 "깊이 충분"
-const STAND=160;  // 이 이상이면 "섰다"
-
-// ---------- 유틸 ----------
 function angle(a,b,c){
   const v1={x:a.x-b.x,y:a.y-b.y}, v2={x:c.x-b.x,y:c.y-b.y};
-  const dot=v1.x*v2.x+v1.y*v2.y;
-  const m=Math.hypot(v1.x,v1.y)*Math.hypot(v2.x,v2.y);
-  if(!m) return 180;
-  let cos=Math.min(1,Math.max(-1,dot/m));
+  const dot=v1.x*v2.x+v1.y*v2.y, m=Math.hypot(v1.x,v1.y)*Math.hypot(v2.x,v2.y);
+  if(!m) return 180; let cos=Math.min(1,Math.max(-1,dot/m));
   return Math.acos(cos)*180/Math.PI;
 }
-function beep(freq,dur){
-  try{
-    if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)();
-    const o=audioCtx.createOscillator(), g=audioCtx.createGain();
-    o.frequency.value=freq; o.connect(g); g.connect(audioCtx.destination);
-    g.gain.setValueAtTime(0.001,audioCtx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.3,audioCtx.currentTime+0.01);
-    g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+dur);
-    o.start(); o.stop(audioCtx.currentTime+dur);
-  }catch(e){}
-}
+function beep(f,d){ try{ if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+  const o=audioCtx.createOscillator(),g=audioCtx.createGain(); o.frequency.value=f; o.connect(g); g.connect(audioCtx.destination);
+  g.gain.setValueAtTime(0.001,audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.3,audioCtx.currentTime+0.01);
+  g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+d); o.start(); o.stop(audioCtx.currentTime+d);}catch(e){} }
 function buzz(p){ if(navigator.vibrate){ try{navigator.vibrate(p);}catch(e){} } }
-function setFeedback(t,c){ $('feedback').textContent=t; $('feedback').style.color=c; }
+function setFeedback(t,c){ $('feedback').textContent=t; $('feedback').style.color=c; $('feedback').style.textShadow='0 0 10px '+c.replace(')',',0.6)').replace('rgb','rgba').replace('#','rgba'); }
 
-// ---------- 모델 ----------
-async function loadModel(){
-  if(poseLandmarker) return;
-  const vision = await FilesetResolver.forVisionTasks(
-    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
-  poseLandmarker = await PoseLandmarker.createFromOptions(vision,{
-    baseOptions:{
-      modelAssetPath:"https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
-      delegate:"GPU"
-    },
-    runningMode:"VIDEO", numPoses:1
-  });
+async function loadModels(){
+  if(pose && face) return;
+  const vision = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
+  pose = await PoseLandmarker.createFromOptions(vision,{
+    baseOptions:{ modelAssetPath:"https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task", delegate:"GPU" },
+    runningMode:"VIDEO", numPoses:1 });
+  face = await FaceLandmarker.createFromOptions(vision,{
+    baseOptions:{ modelAssetPath:"https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task", delegate:"GPU" },
+    runningMode:"VIDEO", numFaces:1 });
 }
 
-// ---------- 카메라 ----------
 async function openCamera(){
-  stream = await navigator.mediaDevices.getUserMedia({
-    video:{ facingMode:'user', width:{ideal:720}, height:{ideal:1280} }, audio:false
-  });
+  stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:'user', width:{ideal:720} }, audio:false });
   video.srcObject=stream;
   await new Promise(r=>{ video.onloadedmetadata=()=>{ video.play(); r(); }; });
   canvas.width=video.videoWidth; canvas.height=video.videoHeight;
 }
 
-// ---------- 메인 루프 ----------
 function loop(){
   if(!running) return;
-  if(video.currentTime!==lastVideoTime){
-    lastVideoTime=video.currentTime;
-    const res = poseLandmarker.detectForVideo(video, performance.now());
+  if(video.currentTime!==lastT){
+    lastT=video.currentTime;
+    const ts=performance.now();
+    let pr=null, fr=null;
+    try{ pr=pose.detectForVideo(video,ts); }catch(e){}
+    try{ fr=face.detectForVideo(video,ts+0.1); }catch(e){}
     ctx.clearRect(0,0,canvas.width,canvas.height);
-    if(res.landmarks && res.landmarks.length){
-      const lm=res.landmarks[0];
-      drawSkeleton(lm);
-      processSquat(lm);
-    }else{
-      setFeedback('몸이 안 보여요 — 뒤로 물러나세요', '#fbbf24');
-      setDepth(0,null);
-    }
+    if(fr && fr.faceLandmarks && fr.faceLandmarks.length) drawFace(fr.faceLandmarks[0]);
+    if(pr && pr.landmarks && pr.landmarks.length){ drawPose(pr.landmarks[0]); processSquat(pr.landmarks[0]); }
+    else { setFeedback('몸이 안 보여요 — 뒤로 물러나세요','#fbbf24'); setDepth(0,null); }
   }
   requestAnimationFrame(loop);
 }
 
-function drawSkeleton(lm){
-  drawUtils.drawConnectors(lm, PoseLandmarker.POSE_CONNECTIONS, {color:'rgba(143,182,228,0.9)', lineWidth:4});
-  drawUtils.drawLandmarks(lm, {color:'#fbbf24', fillColor:'#fff', radius:3, lineWidth:1});
+function drawFace(f){
+  ctx.save();
+  ctx.shadowBlur=0;
+  drawUtils.drawConnectors(f, FaceLandmarker.FACE_LANDMARKS_TESSELATION, {color:'rgba(34,211,238,0.22)', lineWidth:0.5});
+  ctx.shadowColor='#22d3ee'; ctx.shadowBlur=8;
+  drawUtils.drawConnectors(f, FaceLandmarker.FACE_LANDMARKS_FACE_OVAL, {color:'#67e8f9', lineWidth:1.4});
+  drawUtils.drawConnectors(f, FaceLandmarker.FACE_LANDMARKS_LEFT_EYE, {color:'#22d3ee', lineWidth:1.2});
+  drawUtils.drawConnectors(f, FaceLandmarker.FACE_LANDMARKS_RIGHT_EYE, {color:'#22d3ee', lineWidth:1.2});
+  drawUtils.drawConnectors(f, FaceLandmarker.FACE_LANDMARKS_LIPS, {color:'#7dd3fc', lineWidth:1.2});
+  ctx.restore();
+}
+
+function drawPose(lm){
+  ctx.save();
+  ctx.shadowColor='#22d3ee'; ctx.shadowBlur=16;
+  drawUtils.drawConnectors(lm, PoseLandmarker.POSE_CONNECTIONS, {color:'#67e8f9', lineWidth:4});
+  ctx.shadowBlur=12;
+  drawUtils.drawLandmarks(lm, {color:'#cffafe', fillColor:'#22d3ee', radius:5, lineWidth:1});
+  ctx.restore();
 }
 
 function kneeAngle(lm){
-  // 좌:23-25-27, 우:24-26-28
-  const vis=(p)=> p && (p.visibility===undefined || p.visibility>0.5);
-  let angles=[];
-  if(vis(lm[23])&&vis(lm[25])&&vis(lm[27])) angles.push(angle(lm[23],lm[25],lm[27]));
-  if(vis(lm[24])&&vis(lm[26])&&vis(lm[28])) angles.push(angle(lm[24],lm[26],lm[28]));
-  if(!angles.length) return null;
-  return angles.reduce((a,b)=>a+b,0)/angles.length;
+  const ok=p=> p && (p.visibility===undefined || p.visibility>0.5);
+  let a=[];
+  if(ok(lm[23])&&ok(lm[25])&&ok(lm[27])) a.push(angle(lm[23],lm[25],lm[27]));
+  if(ok(lm[24])&&ok(lm[26])&&ok(lm[28])) a.push(angle(lm[24],lm[26],lm[28]));
+  return a.length ? a.reduce((x,y)=>x+y,0)/a.length : null;
 }
-
-function setDepth(pct,angleDeg){
-  const fill=$('depthFill');
-  fill.style.width=Math.max(0,Math.min(100,pct))+'%';
-  fill.style.background = pct>=66 ? '#10b981' : (pct>=33 ? '#fbbf24' : '#94a3b8');
-  $('angleVal').textContent = angleDeg==null ? '–°' : Math.round(angleDeg)+'°';
+function setDepth(pct,deg){
+  const f=$('depthFill'); f.style.width=Math.max(0,Math.min(100,pct))+'%';
+  f.style.background = pct>=66?'#34d399':(pct>=33?'#fbbf24':'#22d3ee');
+  f.style.boxShadow='0 0 10px '+(pct>=66?'rgba(52,211,153,0.8)':'rgba(34,211,238,0.8)');
+  $('angleVal').textContent = deg==null?'–°':Math.round(deg)+'°';
 }
-
 function processSquat(lm){
-  const a = kneeAngle(lm);
-  if(a==null){ setFeedback('다리가 안 보여요 — 전신이 나오게', '#fbbf24'); setDepth(0,null); return; }
-
-  // 각도 170(섬)→90(깊음) 을 0~100% 깊이로 환산
-  const pct = (170 - a) / (170 - 90) * 100;
-  setDepth(pct, a);
-
+  const a=kneeAngle(lm);
+  if(a==null){ setFeedback('다리가 안 보여요 — 전신이 나오게','#fbbf24'); setDepth(0,null); return; }
+  setDepth((170-a)/(170-90)*100, a);
   if(state==='up'){
-    if(a <= DEEP){ state='down'; reachedDepth=true; }
-    else if(a < STAND){ setFeedback('조금 더 깊이 앉아요 ⬇️', '#fbbf24'); }
-    else { setFeedback('좋아요, 일어선 자세 ✅', '#a7f3d0'); }
-  }else{ // down
-    if(a <= DEEP){ setFeedback('완벽한 깊이! 이제 일어서요 ⬆️', '#34d399'); }
-    else if(a >= STAND){
-      // 일어섬 → 1회 인정 (깊이 도달했을 때만)
-      state='up';
-      if(reachedDepth){ goodRep(); }
-      reachedDepth=false;
-    }
+    if(a<=DEEP){ state='down'; reachedDepth=true; }
+    else if(a<STAND) setFeedback('조금 더 깊이 앉아요 ⬇','#fbbf24');
+    else setFeedback('READY — 일어선 자세 ✓','#34d399');
+  }else{
+    if(a<=DEEP) setFeedback('완벽한 깊이! 일어서요 ⬆','#34d399');
+    else if(a>=STAND){ state='up'; if(reachedDepth) goodRep(); reachedDepth=false; }
   }
 }
-
 function goodRep(){
-  count++;
-  $('bigCount').textContent=count;
-  $('chipNow').textContent=count;
-  $('bigCount').classList.remove('pop'); void $('bigCount').offsetWidth; $('bigCount').classList.add('pop');
-  $('flash').classList.remove('go'); void $('flash').offsetWidth; $('flash').classList.add('go');
-  setFeedback('좋아요! 정확해요 👏', '#34d399');
-  beep(660,0.12); buzz(40);
+  count++; $('bigCount').textContent=count; $('chipNow').textContent=count;
+  const b=$('bigCount'); b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop');
+  const fl=$('flash'); fl.classList.remove('go'); void fl.offsetWidth; fl.classList.add('go');
+  setFeedback('REP '+count+' — 정확해요 👏','#34d399'); beep(660,0.12); buzz(40);
   if(count>=target) finish();
 }
+function finish(){ running=false; beep(880,0.3); buzz([0,80,50,80]);
+  $('doneTitle').textContent=target+' REPS 완료!'; $('doneScreen').classList.remove('hidden'); }
 
-function finish(){
-  running=false;
-  beep(880,0.3); buzz([0,80,50,80]);
-  $('doneTitle').textContent=target+'개 완료!';
-  $('doneScreen').classList.remove('hidden');
-}
-
-// ---------- 흐름 ----------
 async function start(){
-  $('startScreen').classList.add('hidden');
-  $('loadScreen').classList.remove('hidden');
+  $('startScreen').classList.add('hidden'); $('loadScreen').classList.remove('hidden');
   try{
-    $('loadMsg').textContent='AI 자세 분석 준비 중…';
-    await loadModel();
+    $('loadMsg').textContent='AI 추적 엔진 로딩 중… (포즈 + 페이스메쉬)';
+    await loadModels();
     $('loadMsg').textContent='카메라 켜는 중…';
     await openCamera();
-  }catch(e){
-    $('loadScreen').classList.add('hidden');
-    showError(e);
-    return;
-  }
+  }catch(e){ $('loadScreen').classList.add('hidden'); showError(e); return; }
   $('loadScreen').classList.add('hidden');
-  count=0; state='up'; reachedDepth=false;
-  $('bigCount').textContent='0'; $('chipNow').textContent='0';
-  await countdown();
-  running=true; lastVideoTime=-1;
-  setFeedback('시작! 천천히 정확하게 🦵', '#a7f3d0');
-  loop();
+  await begin();
 }
-
-function countdown(){
-  return new Promise(res=>{
-    const el=$('countdown'); let n=3;
-    el.textContent=n; el.classList.remove('hidden'); beep(440,0.1);
-    const t=setInterval(()=>{
-      n--;
-      if(n<=0){ clearInterval(t); el.classList.add('hidden'); res(); }
-      else { el.textContent=n; beep(440,0.1); buzz(20); }
-    },800);
-  });
+function begin(){
+  count=0; state='up'; reachedDepth=false; $('bigCount').textContent='0'; $('chipNow').textContent='0';
+  return countdown().then(()=>{ running=true; lastT=-1; setFeedback('시작! 천천히 정확하게 🦿','#67e8f9'); loop(); });
 }
+function countdown(){ return new Promise(res=>{ const el=$('countdown'); let n=3;
+  el.textContent=n; el.classList.remove('hidden'); beep(440,0.1);
+  const t=setInterval(()=>{ n--; if(n<=0){ clearInterval(t); el.classList.add('hidden'); res(); }
+    else { el.textContent=n; beep(440,0.1); buzz(20); } },800); }); }
 
 function showError(e){
-  let msg='카메라 권한을 허용해 주세요. (설정 → 사이트 권한 → 카메라)';
-  if(e && e.name==='NotAllowedError') msg='카메라 사용을 허용하지 않았어요. 브라우저 주소창의 카메라 아이콘에서 허용해 주세요.';
-  else if(e && e.name==='NotFoundError') msg='카메라를 찾을 수 없어요. 모바일에서 열어주세요.';
-  else if(location.protocol!=='https:' && location.hostname!=='localhost') msg='카메라는 https 주소에서만 작동해요. (깃허브 페이지 주소로 접속)';
-  else if(e && e.message) msg=e.message;
-  $('errMsg').textContent=msg;
-  $('errScreen').classList.remove('hidden');
+  let m='카메라 권한을 허용해 주세요.';
+  if(e&&e.name==='NotAllowedError') m='카메라 사용을 허용하지 않았어요. 주소창의 카메라 아이콘에서 허용해 주세요.';
+  else if(e&&e.name==='NotFoundError') m='카메라를 찾을 수 없어요. 모바일에서 열어주세요.';
+  else if(location.protocol!=='https:'&&location.hostname!=='localhost') m='카메라는 https에서만 작동해요.';
+  else if(e&&e.message) m=e.message;
+  $('errMsg').textContent=m; $('errScreen').classList.remove('hidden');
 }
 
-// 목표 선택
 document.querySelectorAll('.tgt').forEach(b=>b.addEventListener('click',()=>{
   document.querySelectorAll('.tgt').forEach(x=>x.classList.remove('on'));
-  b.classList.add('on'); target=+b.dataset.n; $('chipTgt').textContent=target;
-}));
-
+  b.classList.add('on'); target=+b.dataset.n; $('chipTgt').textContent=target; }));
 $('startBtn').addEventListener('click',start);
-$('againBtn').addEventListener('click',()=>{ $('doneScreen').classList.add('hidden'); restart(); });
+$('againBtn').addEventListener('click',()=>{ $('doneScreen').classList.add('hidden'); begin(); });
 $('retryBtn').addEventListener('click',()=>{ $('errScreen').classList.add('hidden'); start(); });
-
-async function restart(){
-  count=0; state='up'; reachedDepth=false;
-  $('bigCount').textContent='0'; $('chipNow').textContent='0';
-  await countdown();
-  running=true; lastVideoTime=-1;
-  setFeedback('시작! 천천히 정확하게 🦵', '#a7f3d0');
-  loop();
-}
 </script>
 </body>
 </html>
