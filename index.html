@@ -12,9 +12,9 @@
 
   /* 카메라(어둡게) + 골격(밝게) */
   #stage{position:absolute;inset:0;background:#000;overflow:hidden;}
-  #cam{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;transform:scaleX(-1);
+  #cam{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1);
     filter:brightness(0.34) contrast(1.08) saturate(0.7);}
-  #overlay{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;transform:scaleX(-1);}
+  #overlay{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1);}
   /* 비네트 + 스캔 글로우 */
   #vignette{position:absolute;inset:0;z-index:2;pointer-events:none;
     background:radial-gradient(ellipse at center,transparent 50%,rgba(2,6,23,0.4) 100%);}
@@ -114,7 +114,7 @@
   </div>
 
   <div id="topbar">
-    <div id="sysLabel"><span class="rec">●</span> AI MOTION TRACKING<span class="sub">POSE · FACE MESH · ACTIVE</span></div>
+    <div id="sysLabel"><span class="rec">●</span> AI MOTION TRACKING<span class="sub">POSE TRACKING · ACTIVE</span></div>
     <div id="counterChip"><div class="n" id="chipNow">0</div><div class="t">/ <span id="chipTgt">15</span> REPS</div></div>
   </div>
 
@@ -134,7 +134,7 @@
   <div id="startScreen" class="screen">
     <div class="bigEmoji">🦿</div>
     <h1>AI 스쿼트 코치</h1>
-    <p>AI가 <b>온몸의 관절 + 얼굴</b>을 실시간 추적해<br><b>제대로 앉은 스쿼트만</b> 카운트합니다.</p>
+    <p>AI가 <b>온몸의 관절</b>을 실시간 추적해<br><b>제대로 앉은 스쿼트만</b> 카운트합니다.</p>
     <p style="font-size:12px;color:#64748b;">📱 폰을 세로로 세워두고 <b>전신이 다 보이게</b> 1.5~2.5m 떨어지세요.</p>
     <div id="targetPick">
       <button class="tgt" data-n="10">10</button>
@@ -166,14 +166,13 @@
 </div>
 
 <script type="module">
-import { PoseLandmarker, FaceLandmarker, FilesetResolver, DrawingUtils }
+import { PoseLandmarker, FilesetResolver }
   from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
 
 const $ = id => document.getElementById(id);
 const video=$('cam'), canvas=$('overlay'), ctx=canvas.getContext('2d');
-const drawUtils = new DrawingUtils(ctx);
-
-let pose=null, face=null, stream=null, running=false, target=15;
+// 페이스메쉬 제거 — 포즈 전용(가벼움)
+let pose=null, stream=null, running=false, target=15;
 let count=0, state='up', reachedDepth=false, lastT=-1, audioCtx=null;
 const DEEP=100, STAND=160;
 
@@ -191,18 +190,15 @@ function buzz(p){ if(navigator.vibrate){ try{navigator.vibrate(p);}catch(e){} } 
 function setFeedback(t,c){ $('feedback').textContent=t; $('feedback').style.color=c; $('feedback').style.textShadow='0 0 10px '+c.replace(')',',0.6)').replace('rgb','rgba').replace('#','rgba'); }
 
 async function loadModels(){
-  if(pose && face) return;
+  if(pose) return;
   const vision = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
   pose = await PoseLandmarker.createFromOptions(vision,{
     baseOptions:{ modelAssetPath:"https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task", delegate:"GPU" },
     runningMode:"VIDEO", numPoses:1 });
-  face = await FaceLandmarker.createFromOptions(vision,{
-    baseOptions:{ modelAssetPath:"https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task", delegate:"GPU" },
-    runningMode:"VIDEO", numFaces:1 });
 }
 
 async function openCamera(){
-  stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:'user', width:{ideal:1080}, height:{ideal:1920}, aspectRatio:{ideal:0.5625} }, audio:false });
+  stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:'user', width:{ideal:1280}, height:{ideal:720} }, audio:false });
   video.srcObject=stream;
   await new Promise(r=>{ video.onloadedmetadata=()=>{ video.play(); r(); }; });
   canvas.width=video.videoWidth; canvas.height=video.videoHeight;
@@ -213,27 +209,13 @@ function loop(){
   if(video.currentTime!==lastT){
     lastT=video.currentTime;
     const ts=performance.now();
-    let pr=null, fr=null;
+    let pr=null;
     try{ pr=pose.detectForVideo(video,ts); }catch(e){}
-    try{ fr=face.detectForVideo(video,ts+0.1); }catch(e){}
     ctx.clearRect(0,0,canvas.width,canvas.height);
-    if(fr && fr.faceLandmarks && fr.faceLandmarks.length) drawFace(fr.faceLandmarks[0]);
     if(pr && pr.landmarks && pr.landmarks.length){ drawPose(pr.landmarks[0]); processSquat(pr.landmarks[0]); }
     else { setFeedback('몸이 안 보여요 — 뒤로 물러나세요','#fbbf24'); setDepth(0,null); }
   }
   requestAnimationFrame(loop);
-}
-
-function drawFace(f){
-  ctx.save();
-  ctx.shadowBlur=0;
-  drawUtils.drawConnectors(f, FaceLandmarker.FACE_LANDMARKS_TESSELATION, {color:'rgba(45,212,130,0.22)', lineWidth:0.5});
-  ctx.shadowColor='#2dd47a'; ctx.shadowBlur=8;
-  drawUtils.drawConnectors(f, FaceLandmarker.FACE_LANDMARKS_FACE_OVAL, {color:'#8affc1', lineWidth:1.4});
-  drawUtils.drawConnectors(f, FaceLandmarker.FACE_LANDMARKS_LEFT_EYE, {color:'#2dd47a', lineWidth:1.2});
-  drawUtils.drawConnectors(f, FaceLandmarker.FACE_LANDMARKS_RIGHT_EYE, {color:'#2dd47a', lineWidth:1.2});
-  drawUtils.drawConnectors(f, FaceLandmarker.FACE_LANDMARKS_LIPS, {color:'#86efac', lineWidth:1.2});
-  ctx.restore();
 }
 
 // 졸라맨 X — 얼굴/손가락 잔점 빼고 몸통·팔·다리 뼈대만 글로우 + 관절 노드
@@ -301,7 +283,7 @@ function finish(){ running=false; beep(880,0.3); buzz([0,80,50,80]);
 async function start(){
   $('startScreen').classList.add('hidden'); $('loadScreen').classList.remove('hidden');
   try{
-    $('loadMsg').textContent='AI 추적 엔진 로딩 중… (포즈 + 페이스메쉬)';
+    $('loadMsg').textContent='AI 추적 엔진 로딩 중…';
     await loadModels();
     $('loadMsg').textContent='카메라 켜는 중…';
     await openCamera();
