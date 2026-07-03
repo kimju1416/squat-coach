@@ -90,6 +90,7 @@
       <button class="hbtn" id="flipBtn" style="display:none">카메라 전환</button>
       <button class="hbtn" id="resetBtn" style="display:none">0으로</button>
       <button class="hbtn" id="endBtn" style="display:none;border-color:rgba(251,113,133,.5);color:#fda4af;">🏁 종료</button>
+      <button class="hbtn" id="exitBtn" style="border-color:rgba(251,113,133,.5);color:#fda4af;font-size:16px;padding:8px 12px;">✕</button>
     </div>
   </div>
 
@@ -339,13 +340,17 @@ $('endBtn').onclick=function(){
   $('finishNum').textContent=reps;
   $('finishOverlay').style.display='flex';
 };
-$('closeBtn').onclick=function(){
+function closeWindow(){
+  try{ running=false; stopCam(); }catch(e){}
   window.close();
-  // 팝업이 아니라 새 탭으로 열려 window.close()가 막히는 브라우저 대비
+  // 새 탭으로 열려 window.close()가 막히는 브라우저 대비 → 이전 페이지(PAPS)로
   setTimeout(function(){
-    $('closeHint').textContent='이 창이 자동으로 닫히지 않으면 탭을 직접 닫아 주세요.';
-  },300);
-};
+    if(history.length>1){ history.back(); }
+    else { var h=$('closeHint'); if(h) h.textContent='이 창이 자동으로 닫히지 않으면 탭을 직접 닫아 주세요.'; }
+  },250);
+}
+$('closeBtn').onclick=closeWindow;
+$('exitBtn').onclick=closeWindow;
 document.addEventListener('visibilitychange',function(){
   if(document.hidden){ running=false; }
   else if(video.srcObject){ running=true; lastVideoTime=-1; loop(); }
