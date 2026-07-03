@@ -59,6 +59,16 @@
   #loadMsg{margin-top:16px;font-size:12.5px;color:#5f7ea0;min-height:1.2em;max-width:420px;line-height:1.5;}
   .guide{display:flex;gap:12px;margin-top:26px;flex-wrap:wrap;justify-content:center;}
   .g-item{background:rgba(255,255,255,.05);border:1px solid rgba(34,211,238,.25);border-radius:12px;padding:10px 14px;font-size:12px;color:#a5f3fc;font-weight:600;}
+  /* 종료 결과 화면 — 심플하게 총 개수만 */
+  #finishOverlay{position:absolute;inset:0;z-index:25;background:
+    radial-gradient(700px 420px at 50% 30%, rgba(163,230,53,.13), transparent 65%), rgba(2,6,15,.96);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;}
+  #finishNum{font-size:min(30vw,120px);font-weight:900;line-height:1;letter-spacing:-4px;color:#fff;
+    text-shadow:0 0 30px rgba(163,230,53,.8),0 0 70px rgba(163,230,53,.4);}
+  #finishSub{font-size:clamp(15px,4vw,19px);font-weight:800;color:#a5f3fc;letter-spacing:2px;margin-top:6px;}
+  #closeBtn{margin-top:34px;background:linear-gradient(135deg,#0891b2,#7c3aed);color:#fff;border:none;border-radius:16px;
+    padding:16px 44px;font-size:17px;font-weight:900;cursor:pointer;font-family:inherit;box-shadow:0 0 30px rgba(34,211,238,.4);min-height:52px;}
+  #closeHint{margin-top:14px;font-size:12px;color:#5f7ea0;max-width:320px;line-height:1.5;}
 </style>
 </head>
 <body>
@@ -79,6 +89,7 @@
     <div class="hud-btns">
       <button class="hbtn" id="flipBtn" style="display:none">카메라 전환</button>
       <button class="hbtn" id="resetBtn" style="display:none">0으로</button>
+      <button class="hbtn" id="endBtn" style="display:none;border-color:rgba(251,113,133,.5);color:#fda4af;">🏁 종료</button>
     </div>
   </div>
 
@@ -103,6 +114,13 @@
       <div class="g-item">무릎 90도까지 앉으면 1회</div>
       <div class="g-item">영상은 기기 밖으로 안 나가요</div>
     </div>
+  </div>
+
+  <div id="finishOverlay" style="display:none;">
+    <div id="finishNum">0</div>
+    <div id="finishSub">개 완료했어요</div>
+    <button id="closeBtn">닫기</button>
+    <div id="closeHint"></div>
   </div>
 </div>
 
@@ -301,6 +319,7 @@ $('startBtn').onclick=async function(){
     $('depthLbl').style.display='block';
     $('flipBtn').style.display='block';
     $('resetBtn').style.display='block';
+    $('endBtn').style.display='block';
     running=true; lastVideoTime=-1; loop();
   }catch(e){
     btn.disabled=false; btn.textContent='카메라 시작';
@@ -314,6 +333,19 @@ $('flipBtn').onclick=async function(){
   catch(e){ facing=(facing==='user')?'environment':'user'; try{ await startCam(); }catch(_){} }
 };
 $('resetBtn').onclick=function(){ reps=0; phase='up'; $('repNum').textContent='0'; };
+$('endBtn').onclick=function(){
+  running=false;
+  stopCam();
+  $('finishNum').textContent=reps;
+  $('finishOverlay').style.display='flex';
+};
+$('closeBtn').onclick=function(){
+  window.close();
+  // 팝업이 아니라 새 탭으로 열려 window.close()가 막히는 브라우저 대비
+  setTimeout(function(){
+    $('closeHint').textContent='이 창이 자동으로 닫히지 않으면 탭을 직접 닫아 주세요.';
+  },300);
+};
 document.addEventListener('visibilitychange',function(){
   if(document.hidden){ running=false; }
   else if(video.srcObject){ running=true; lastVideoTime=-1; loop(); }
