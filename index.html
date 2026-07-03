@@ -133,6 +133,8 @@ const $=id=>document.getElementById(id);
 const video=$('cam'), canvas=$('cv'), ctx=canvas.getContext('2d');
 let pose=null, face=null, running=false, facing='user';
 let reps=0, phase='up', lastVideoTime=-1, frameNo=0, lastFace=null;
+let kneeEMA=null, lastRepAt=0, badFrames=0, wentDeep=false;
+function resetSquatState(){ phase='up'; kneeEMA=null; wentDeep=false; }
 
 function angle(a,b,c){
   const v1={x:a.x-b.x,y:a.y-b.y}, v2={x:c.x-b.x,y:c.y-b.y};
@@ -253,24 +255,59 @@ function drawFaceMesh(fl){
   ctx.restore();
 }
 
+// 전신이 제대로 프레임에 잡혔는지 검사 — 오검출(몸 없어도 카운트) 방지
+function bodyReady(lms){
+  const ids=[11,12,23,24,25,26,27,28]; // 어깨·엉덩이·무릎·발목
+  let minVis=1;
+  for(const i of ids){ const v=(lms[i] && lms[i].visibility!=null)?lms[i].visibility:1; if(v<minVis)minVis=v; }
+  if(minVis<0.6) return {ok:false,msg:'몸 전체가 잘 보이게 서 주세요'};
+  const ankY=Math.max(lms[27].y,lms[28].y);      // 발목(아래)
+  const shY =Math.min(lms[11].y,lms[12].y);       // 어깨(위)
+  const kneeY=(lms[25].y+lms[26].y)/2;
+  if(ankY>0.99) return {ok:false,msg:'발끝까지 보이게 뒤로 물러나요'};
+  if(shY<0.02)  return {ok:false,msg:'머리·어깨가 다 보이게 해요'};
+  if(ankY-shY<0.35) return {ok:false,msg:'몸이 화면에 크게 잡히게 앞으로 와요'};
+  // 딥스쿼트에선 엉덩이가 무릎 아래로 가므로 hip 순서는 안 봄. 어깨<무릎<발목만 확인(쓰레기 프레임 차단)
+  if(!(shY<kneeY && kneeY<ankY+0.02)) return {ok:false,msg:'바르게 서서 전신을 보여 주세요'};
+  return {ok:true};
+}
+
 function updateSquat(lms){
+  const st=$('stateTxt');
+  const ready=bodyReady(lms);
+  if(!ready.ok){
+    // 몸이 제대로 안 잡히면 카운트·상태 진행 정지 (오검출 차단)
+    badFrames++;
+    st.textContent=ready.msg; st.style.color='#fbbf24';
+    $('depthBar').style.width='0%';
+    if(badFrames>4) resetSquatState();   // 잠깐 사라지면 상태 초기화
+    return 0;
+  }
+  badFrames=0;
   const L=angle(lms[23],lms[25],lms[27]);
   const R=angle(lms[24],lms[26],lms[28]);
-  const knee=Math.min(L,R);
-  const depth=Math.max(0,Math.min(1,(165-knee)/70)); // 165°=서있음 ~ 95°=풀스쿼트
+  let knee=Math.min(L,R);
+  // EMA 스무딩 — 랜드마크 지터로 각도가 튀어 마구 세지는 것 방지
+  kneeEMA = (kneeEMA==null) ? knee : (kneeEMA*0.6 + knee*0.4);
+  knee = kneeEMA;
+  const depth=Math.max(0,Math.min(1,(165-knee)/70));
   $('depthBar').style.width=(depth*100)+'%';
-  const st=$('stateTxt');
   if(phase==='up'){
-    if(knee<105){ phase='down'; st.textContent='좋아요! 이제 천천히 일어나요'; st.style.color='#a3e635'; }
-    else if(knee<150){ st.textContent='조금만 더 깊이 앉아요'; st.style.color='#fbbf24'; }
+    if(knee<100){ phase='down'; wentDeep=true; st.textContent='좋아요! 이제 천천히 일어나요'; st.style.color='#a3e635'; }
+    else if(knee<148){ st.textContent='조금만 더 깊이 앉아요'; st.style.color='#fbbf24'; }
     else { st.textContent='천천히 앉아 보세요'; st.style.color='#22d3ee'; }
   } else {
-    if(knee>150){
-      phase='up'; reps++;
-      $('repNum').textContent=reps;
-      st.textContent=(reps%5===0)?(reps+'개 달성! 대단해요'):'완벽해요 +1';
-      st.style.color='#a3e635';
-      if(navigator.vibrate){ try{navigator.vibrate(60);}catch(e){} }
+    if(knee>158){
+      const now=performance.now();
+      // ①실제로 깊이 앉았고 ②직전 카운트 후 0.7초 지났을 때만 +1 (디바운스)
+      if(wentDeep && now-lastRepAt>700){
+        reps++; lastRepAt=now;
+        $('repNum').textContent=reps;
+        st.textContent=(reps%5===0)?(reps+'개 달성! 대단해요'):'완벽해요 +1';
+        st.style.color='#a3e635';
+        if(navigator.vibrate){ try{navigator.vibrate(60);}catch(e){} }
+      }
+      phase='up'; wentDeep=false;
     }
   }
   return depth;
@@ -333,7 +370,7 @@ $('flipBtn').onclick=async function(){
   try{ await startCam(); }
   catch(e){ facing=(facing==='user')?'environment':'user'; try{ await startCam(); }catch(_){} }
 };
-$('resetBtn').onclick=function(){ reps=0; phase='up'; $('repNum').textContent='0'; };
+$('resetBtn').onclick=function(){ reps=0; lastRepAt=0; resetSquatState(); $('repNum').textContent='0'; };
 $('endBtn').onclick=function(){
   running=false;
   stopCam();
