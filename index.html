@@ -116,6 +116,15 @@
   .rp-in h2{font-size:24px;font-weight:900;text-align:center;
     background:linear-gradient(110deg,#7fefff,#c79bff);-webkit-background-clip:text;background-clip:text;color:transparent;}
   .rp-date{text-align:center;font-size:11.5px;color:#5f7ea0;margin:6px 0 18px;}
+  .score-wrap{display:flex;align-items:center;justify-content:center;gap:18px;margin:4px 0 18px;}
+  .score-ring{width:112px;height:112px;border-radius:50%;flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+    background:conic-gradient(var(--c,#a3e635) calc(var(--p)*1%), rgba(148,163,184,.15) 0);
+    filter:drop-shadow(0 0 14px rgba(45,212,191,.35));}
+  .score-ring span{width:84px;height:84px;border-radius:50%;background:#050b18;display:flex;align-items:center;justify-content:center;
+    font-size:36px;font-weight:900;color:#fff;}
+  .score-side{text-align:left;min-width:0;}
+  .sc-band{font-size:16px;font-weight:900;}
+  .sc-rel{font-size:11.5px;color:#5f7ea0;margin-top:6px;line-height:1.55;}
   .rp-snaps{display:flex;gap:10px;margin-bottom:16px;}
   .rp-snaps figure{flex:1;min-width:0;}
   .rp-snaps img{width:100%;border-radius:14px;border:1px solid rgba(34,211,238,.3);display:block;}
@@ -184,13 +193,13 @@
       </div>
       <div class="hub-sec">반응 게임</div>
       <div class="hub-grid">
-        <button class="hcard" data-ex="mole" style="--c:rgba(251,191,36,.5);--tc:#fbbf24"><span class="ic">🐹</span><div class="tt">두더지 잡기</div><div class="dd">45초 안에 손으로 최대한 많이!</div><div class="bst" data-best="mole"></div></button>
-        <button class="hcard" data-ex="reaction" style="--c:rgba(251,113,133,.5);--tc:#fb7185"><span class="ic">⚡</span><div class="tt">반응속도</div><div class="dd">나타나는 원을 손으로 최대한 빨리</div><div class="bst" data-best="reaction"></div></button>
-        <button class="hcard wide" data-ex="sequence" style="--c:rgba(167,139,250,.5);--tc:#a78bfa"><span class="ic">🔢</span><div class="tt">순서 터치 1·2·3·4</div><div class="dd">숫자 원 4개를 순서대로 빠르게 터치 — 민첩성 테스트</div><div class="bst" data-best="sequence"></div></button>
+        <button class="hcard" data-ex="mole" style="--c:rgba(251,191,36,.5);--tc:#fbbf24"><span class="ic">👾</span><div class="tt">두더지 잡기</div><div class="dd">45초 안에 손으로 최대한 많이!</div><div class="bst" data-best="mole"></div></button>
+        <button class="hcard" data-ex="reaction" style="--c:rgba(251,113,133,.5);--tc:#fb7185"><span class="ic">⚡</span><div class="tt">반응속도 60초</div><div class="dd">번쩍이는 원을 쉬지 않고 최대한 많이!</div><div class="bst" data-best="reaction2"></div></button>
+        <button class="hcard wide" data-ex="sequence" style="--c:rgba(167,139,250,.5);--tc:#a78bfa"><span class="ic">🔢</span><div class="tt">넘버 헌터</div><div class="dd">1→2→3→4 순서대로 터치 — 60초 동안 몇 세트나 사냥할까?</div><div class="bst" data-best="sequence2"></div></button>
       </div>
       <div class="hub-sec">AI 자세 분석</div>
       <div class="hub-grid">
-        <button class="hcard wide" data-ex="posture" style="--c:rgba(45,212,191,.5);--tc:#2dd4bf"><span class="ic">🧍</span><div class="tt">자세 분석 + 운동 처방</div><div class="dd">정면·측면 자세를 측정해 거북목·어깨/골반 기울기를 확인하고 맞춤 운동을 추천해요</div></button>
+        <button class="hcard wide" data-ex="posture" style="--c:rgba(45,212,191,.5);--tc:#2dd4bf"><span class="ic">🧍</span><div class="tt">자세 분석 + 운동 처방</div><div class="dd">정면·측면 정밀 스캔으로 거북목·어깨/골반 등 12가지 지표를 분석해 자세 점수와 맞춤 운동을 처방해요</div></button>
       </div>
       <div class="hub-foot">🔒 영상은 이 기기 안에서만 분석돼요 · 저장·전송 없음<br>AI MOTION TRAINING · ON-DEVICE</div>
     </div>
@@ -244,7 +253,7 @@ let current=null;                              // 현재 활동 객체
 /* ---------- 화면 좌표계: video는 object-fit:cover, 캔버스는 화면픽셀 ---------- */
 const map={s:1,ox:0,oy:0,W:0,H:0,vw:720,vh:1280};
 function updateMap(){
-  const W=window.innerWidth, H=window.innerHeight;
+  const W=window.innerWidth||375, H=window.innerHeight||812;   // 숨겨진 embed 등 0×0 보고 방어
   const vw=(camOn&&video.videoWidth)?video.videoWidth:720;
   const vh=(camOn&&video.videoHeight)?video.videoHeight:1280;
   const s=Math.max(W/vw, H/vh);
@@ -424,8 +433,8 @@ function bestLabel(k){
   const v=best.get(k);
   if(v==null) return '';
   if(k==='mole') return '🏆 최고 '+v+'점';
-  if(k==='reaction') return '🏆 최고 평균 '+v+'ms';
-  if(k==='sequence') return '🏆 최고 '+(v/1000).toFixed(2)+'초';
+  if(k==='reaction2') return '🏆 최고 '+v+'개';
+  if(k==='sequence2') return '🏆 최고 '+v+'세트';
   return '🏆 최고 '+v+'개';
 }
 function refreshBests(){
@@ -600,9 +609,9 @@ ACT.mole=(()=>{
   }
   return {
     key:'mole', hud:{counter:true,timer:true,end:true}, _G:G,
-    intro:{emoji:'🐹',title:'두더지 잡기',desc:'화면에 나타나는 두더지를 <b>손으로 쳐서</b> 잡아요!<br>45초 동안 최대한 많이. 연속으로 잡으면 콤보 보너스!'},
+    intro:{emoji:'👾',title:'두더지 잡기',desc:'화면에 나타나는 녀석을 <b>손으로 쳐서</b> 잡아요!<br>45초 동안 최대한 많이. 연속으로 잡으면 콤보 보너스!'},
     start(){ G.score=0; G.combo=0; G.maxCombo=0; G.hits=0; G.miss=0; G.mole=null;
-      G.endAt=performance.now()+DUR*1000; G.pop=null;
+      G.endAt=performance.now()+DUR*1000; G.pop=null; G.boom=null;
       $('repNum').textContent='0'; $('repLbl').textContent='SCORE';
       $('timerUnit').textContent='SEC'; spawn(); },
     end(){ this.finish(); },
@@ -627,7 +636,8 @@ ACT.mole=(()=>{
         if(age>m.life){ G.miss++; G.combo=0; setState('놓쳤다! 다음 두더지!','#fb7185'); beep(220,0.15); spawn(); }
         else{
           const k=Math.min(1,age/160);                       // 팝인 애니메이션
-          drawTarget(m.x,m.y,m.r*k,'#fbbf24','🐹');
+          const wob=1+Math.sin(age/110)*0.08;                // 두근두근 펄스(역동)
+          drawTarget(m.x,m.y,m.r*k*wob,'#fbbf24','👾');
           // 남은시간 링
           ctx.beginPath(); ctx.arc(m.x,m.y,m.r*k+7,-Math.PI/2,-Math.PI/2+Math.PI*2*(1-age/m.life));
           ctx.strokeStyle='#fde68a'; ctx.lineWidth=3; ctx.stroke();
@@ -641,12 +651,20 @@ ACT.mole=(()=>{
               $('repNum').textContent=G.score;
               const n=$('repNum'); n.classList.remove('pop'); void n.offsetWidth; n.classList.add('pop');
               G.pop={x:m.x,y:m.y,t:now,txt:'+'+gain+(G.combo>=3?' 🔥x'+G.combo:'')};
+              G.boom={x:m.x,y:m.y,t:now};
               setState(G.combo>=3?G.combo+'콤보! 🔥':'잡았다!','#a3e635');
               beep(660+Math.min(400,G.combo*40),0.1); buzz(40);
               spawn();
             }
           }
         }
+      }
+      if(G.boom&&now-G.boom.t<450){
+        const ba=1-(now-G.boom.t)/450;
+        ctx.save(); ctx.globalAlpha=ba;
+        ctx.font=Math.round(50+(1-ba)*70)+'px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText('💥',G.boom.x,G.boom.y);
+        ctx.restore();
       }
       if(G.pop&&now-G.pop.t<600){
         const a=1-(now-G.pop.t)/600;
@@ -658,10 +676,10 @@ ACT.mole=(()=>{
   };
 })();
 
-/* ---------- 반응속도 ---------- */
+/* ---------- 반응속도 (60초 연속) ---------- */
 ACT.reaction=(()=>{
   const G={};
-  const ROUNDS=5;
+  const DUR=60;
   function grade(ms){
     if(ms<420) return '⚡ 번개급!';
     if(ms<560) return '🐆 치타급!';
@@ -670,25 +688,30 @@ ACT.reaction=(()=>{
     return '🐢 거북이… 다시 도전!';
   }
   return {
-    key:'reaction', hud:{counter:true,end:true}, _G:G,
+    key:'reaction', hud:{counter:true,timer:true,end:true}, _G:G,
     grade,
-    intro:{emoji:'⚡',title:'반응속도 테스트',desc:'화면 어딘가에 <b>원이 번쩍</b> 나타나면 <b>손으로 최대한 빨리</b> 터치!<br>5번 반복해서 평균 반응속도를 재요.'},
-    start(){ G.round=0; G.times=[]; G.state='wait'; G.nextAt=performance.now()+1200; G.target=null;
-      $('repNum').textContent='1/'+ROUNDS; $('repLbl').textContent='ROUND'; },
-    end(){ goHub(); },  // 중도 종료는 그냥 메뉴로
+    intro:{emoji:'⚡',title:'반응속도 60초',desc:'<b>원이 번쩍</b> 나타나면 <b>손으로 최대한 빨리</b> 터치!<br><b>60초</b> 동안 쉬지 않고 계속돼요. 몇 개나 잡을 수 있을까요?'},
+    start(){ G.score=0; G.times=[]; G.state='wait'; G.nextAt=performance.now()+900; G.target=null;
+      G.endAt=performance.now()+DUR*1000;
+      $('repNum').textContent='0'; $('repLbl').textContent='HITS'; $('timerUnit').textContent='SEC'; },
+    end(){ this.finish(); },
     finish(){
-      const avg=Math.round(G.times.reduce((a,b)=>a+b,0)/G.times.length);
-      const prev=+(best.get('reaction')||99999);
-      if(avg<prev) best.set('reaction',avg);
-      showResult({num:avg,sub:'ms · '+grade(avg)+(avg<prev?' 🏆 기록 경신!':''),
-        detail:'라운드별: '+G.times.map(t=>'<span class="nb">'+t+'</span>').join(' · ')+' ms'});
+      const avg=G.times.length?Math.round(G.times.reduce((a,b)=>a+b,0)/G.times.length):0;
+      const fast=G.times.length?Math.min(...G.times):0;
+      const prev=+(best.get('reaction2')||0);
+      if(G.score>prev) best.set('reaction2',G.score);
+      showResult({num:G.score,sub:'개 잡았어요!'+(G.score>prev&&G.score>0?' 🏆 기록 경신!':''),
+        detail:G.times.length?('평균 반응 <span class="nb">'+avg+'ms</span> · 최고 <span class="nb">'+fast+'ms</span><br>'+grade(avg)):''});
     },
     frame(lms){
       const now=performance.now();
+      const remain=Math.max(0,(G.endAt-now)/1000);
+      $('timerVal').textContent=Math.ceil(remain);
+      if(remain<=0){ this.finish(); return; }
       let hands=[];
       if(lms){ drawPose(lms,'#fb7185'); hands=handPoints(lms); drawHandGlow(hands,'#fb7185'); }
+      else setState('몸이 보이게 서 주세요','#fbbf24');
       if(G.state==='wait'){
-        setState('준비… 원이 나타나면 바로 쳐요!','#94c9dd');
         if(now>=G.nextAt){
           const r=Math.max(42,Math.min(map.W,map.H)/8);
           // 현재 손 위치에서 충분히 먼 곳에 스폰
@@ -699,26 +722,26 @@ ACT.reaction=(()=>{
         }
       }else if(G.state==='go'&&G.target){
         const t=G.target;
+        if(now-t.shown>2500){ G.state='wait'; G.nextAt=now+300; G.target=null; return; } // 못 치면 위치 이동
         drawTarget(t.x,t.y,t.r,'#fb7185',null,'!');
-        setState('빨리!','#fb7185');
         if(hands.length&&hitAny(hands,t.x,t.y,t.r+16)){
           const ms=Math.round(now-t.shown);
-          G.times.push(ms); G.round++;
+          G.times.push(ms); G.score++;
+          $('repNum').textContent=G.score;
+          const n=$('repNum'); n.classList.remove('pop'); void n.offsetWidth; n.classList.add('pop');
           beep(660,0.1); buzz(40);
-          if(G.round>=ROUNDS){ this.finish(); return; }
-          $('repNum').textContent=(G.round+1)+'/'+ROUNDS;
           setState(ms+'ms! '+grade(ms),'#a3e635');
-          G.state='wait'; G.nextAt=now+900+Math.random()*1600; G.target=null;
+          G.state='wait'; G.nextAt=now+350+Math.random()*900; G.target=null;
         }
       }
     }
   };
 })();
 
-/* ---------- 순서 터치 1·2·3·4 ---------- */
+/* ---------- 넘버 헌터 (1→2→3→4, 60초 연속 세트) ---------- */
 ACT.sequence=(()=>{
   const G={};
-  const ROUNDS=3, N=4;
+  const DUR=60, N=4;
   function layout(){
     const r=Math.max(40,Math.min(map.W,map.H)/9);
     const pts=[];
@@ -730,30 +753,30 @@ ACT.sequence=(()=>{
   }
   return {
     key:'sequence', hud:{counter:true,timer:true,end:true}, _G:G,
-    intro:{emoji:'🔢',title:'순서 터치 1·2·3·4',desc:'숫자 원 4개가 한꺼번에 나타나요.<br><b>1→2→3→4 순서대로</b> 손으로 최대한 빨리 터치! 3라운드 중 최고 기록에 도전.'},
-    start(){ G.round=0; G.times=[]; this._newRound();
-      $('repLbl').textContent='ROUND'; $('timerUnit').textContent='SEC'; },
-    _newRound(){ G.targets=layout(); G.next=1; G.t0=null;
-      $('repNum').textContent=(G.round+1)+'/'+ROUNDS; },
-    end(){ goHub(); },
+    intro:{emoji:'🔢',title:'넘버 헌터',desc:'숫자 원 4개를 <b>1→2→3→4 순서대로</b> 손으로 터치!<br>한 세트를 끝내면 바로 다음 세트 — <b>60초</b> 동안 몇 세트나 사냥할까요?'},
+    start(){ G.sets=0; G.touch=0; G.bestSet=null; G.endAt=performance.now()+DUR*1000; this._newSet();
+      $('repNum').textContent='0'; $('repLbl').textContent='SETS'; $('timerUnit').textContent='SEC'; },
+    _newSet(){ G.targets=layout(); G.next=1; G.setT0=null; },
+    end(){ this.finish(); },
     finish(){
-      const bestMs=Math.min(...G.times), avg=Math.round(G.times.reduce((a,b)=>a+b,0)/G.times.length);
-      const prev=+(best.get('sequence')||99999999);
-      if(bestMs<prev) best.set('sequence',bestMs);
-      showResult({num:(bestMs/1000).toFixed(2),sub:'초 · 최고 기록'+(bestMs<prev?' 🏆 경신!':''),
-        detail:'라운드별: '+G.times.map(t=>'<span class="nb">'+(t/1000).toFixed(2)+'</span>').join(' · ')+'초 · 평균 <span class="nb">'+(avg/1000).toFixed(2)+'</span>초'});
+      const prev=+(best.get('sequence2')||0);
+      if(G.sets>prev) best.set('sequence2',G.sets);
+      showResult({num:G.sets,sub:'세트 완료!'+(G.sets>prev&&G.sets>0?' 🏆 기록 경신!':''),
+        detail:'숫자 터치 <span class="nb">'+G.touch+'</span>개'+(G.bestSet?' · 최고 세트 <span class="nb">'+(G.bestSet/1000).toFixed(2)+'초</span>':'')});
     },
     frame(lms){
       const now=performance.now();
+      const remain=Math.max(0,(G.endAt-now)/1000);
+      $('timerVal').textContent=Math.ceil(remain);
+      if(remain<=0){ this.finish(); return; }
       let hands=[];
       if(lms){ drawPose(lms,'#a78bfa'); hands=handPoints(lms); drawHandGlow(hands,'#a78bfa'); }
       else setState('몸이 보이게 서 주세요','#fbbf24');
-      if(!G.t0) G.t0=now;
-      const el=(now-G.t0)/1000;
-      $('timerVal').textContent=el.toFixed(1);
+      if(!G.setT0) G.setT0=now;
       const cols={1:'#a3e635',2:'#22d3ee',3:'#fbbf24',4:'#fb7185'};
+      let done=false;
       G.targets.forEach(t=>{
-        if(t.done) return;
+        if(t.done||done) return;
         drawTarget(t.x,t.y,t.r,t.n===G.next?cols[t.n]:'#64748b',null,t.n);
         if(t.n===G.next){ // 현재 목표 강조 펄스
           const k=1+Math.sin(now/160)*0.08;
@@ -765,19 +788,23 @@ ACT.sequence=(()=>{
           if(t.lock){ if(!inside) t.lock=false; return; }
           if(inside){
             if(t.n===G.next){
-              t.done=true; G.next++;
+              t.done=true; G.next++; G.touch++;
               beep(520+t.n*110,0.1); buzz(30);
-              setState(t.n===N?'좋아요!':t.n+'번! 다음 '+G.next+'번','#a3e635');
               if(G.next>N){
-                G.times.push(now-G.t0); G.round++;
-                if(G.round>=ROUNDS){ this.finish(); }
-                else{ setState((((now-G.t0))/1000).toFixed(2)+'초! 다음 라운드','#a3e635'); this._newRound(); }
-              }
+                const dt=now-G.setT0;
+                if(!G.bestSet||dt<G.bestSet) G.bestSet=dt;
+                G.sets++;
+                $('repNum').textContent=G.sets;
+                const nn=$('repNum'); nn.classList.remove('pop'); void nn.offsetWidth; nn.classList.add('pop');
+                setState(G.sets+'세트! '+(dt/1000).toFixed(2)+'초 🔥','#a3e635');
+                beep(880,0.16); buzz([0,50,40,50]);
+                done=true;
+              }else setState(t.n+'번! 다음 '+G.next+'번','#a3e635');
             }else{ setState(G.next+'번 먼저!','#fb7185'); beep(200,0.12); t.lock=true; }
           }
         }
       });
-      if(G.next<=N) if(!$('stateTxt').textContent) setState(G.next+'번 원을 쳐요!','#a78bfa');
+      if(done) this._newSet();
     }
   };
 })();
@@ -785,13 +812,17 @@ ACT.sequence=(()=>{
 /* ---------- 자세 분석 ---------- */
 ACT.posture=(()=>{
   const G={};
-  const HOLD=2.6;                          // 정지 유지 시간(초)
+  const HOLD=4.0;                          // 정지 스캔 시간(초)
   const D=180/Math.PI;
   const IDX=[0,7,8,11,12,23,24,25,26,27,28];
   function vpx(l){ return {x:l.x*map.vw, y:l.y*map.vh}; }   // 비디오 픽셀(각도 계산용)
   function lineDeg(a,b){ // 수평 기준 기울기(도)
     const A=vpx(a),B=vpx(b);
     return Math.atan2(B.y-A.y,B.x-A.x)*D;
+  }
+  function tiltDeg(a,b){ // 수평선 대비 기울기 크기(0~90°) — 점 순서·좌우 방향 무관
+    const d=Math.abs(lineDeg(a,b))%180;
+    return Math.min(d,180-d);
   }
   function fromVertDeg(top,botm){ // 수직 기준 기울기
     const T=vpx(top),B=vpx(botm);
@@ -820,15 +851,19 @@ ACT.posture=(()=>{
 
   function computeFront(a){
     const m=[];
-    const head=Math.abs(lineDeg(a[7],a[8]));
+    const head=tiltDeg(a[7],a[8]);
     const headHi=(a[7].y<a[8].y)?'왼':'오른';
     m.push({ic:'🙂',nm:'머리 기울기',val:head,unit:'°',g:grade3(head,3,6),max:10,
       d:head<3?'머리가 수평으로 잘 서 있어요.':'머리가 '+headHi+'쪽으로 '+head.toFixed(1)+'° 기울어져 있어요. 화면을 볼 때 머리를 세우는 습관을 들여요.',rx:['neckSide']});
-    const sh=Math.abs(lineDeg(a[11],a[12]));
+    const midS={x:(a[11].x+a[12].x)/2,y:(a[11].y+a[12].y)/2};
+    const hshift=fromVertDeg(a[0],midS);
+    m.push({ic:'👤',nm:'머리 치우침',val:hshift,unit:'°',g:grade3(hshift,4,8),max:14,
+      d:hshift<4?'머리가 몸 중심 바로 위에 잘 놓여 있어요.':'머리가 몸 중심에서 옆으로 '+hshift.toFixed(1)+'° 치우쳐 있어요. 정수리를 위로 늘리는 느낌으로 목을 세워요.',rx:['chinTuck','neckSide']});
+    const sh=tiltDeg(a[11],a[12]);
     const shHi=(a[11].y<a[12].y)?'왼':'오른';
     m.push({ic:'🫲',nm:'어깨 수평',val:sh,unit:'°',g:grade3(sh,2.5,5),max:10,
       d:sh<2.5?'양쪽 어깨 높이가 비슷해요.':shHi+'쪽 어깨가 '+sh.toFixed(1)+'° 높아요. 가방을 한쪽으로만 메지 않는지 확인해요.',rx:['wallAngel','neckSide']});
-    const pv=Math.abs(lineDeg(a[23],a[24]));
+    const pv=tiltDeg(a[23],a[24]);
     const pvHi=(a[23].y<a[24].y)?'왼':'오른';
     m.push({ic:'🩳',nm:'골반 수평',val:pv,unit:'°',g:grade3(pv,2.5,5),max:10,
       d:pv<2.5?'골반이 수평으로 균형 잡혀 있어요.':pvHi+'쪽 골반이 '+pv.toFixed(1)+'° 높아요. 다리를 꼬는 습관이 있는지 돌아봐요.',rx:['sidePlank','squatApp']});
@@ -845,6 +880,14 @@ ACT.posture=(()=>{
       m.push({ic:'🦵',nm:'무릎 정렬 (참고)',val:ratio,unit:'',fmt:v=>v.toFixed(2),g,max:2,
         d:g===0?'무릎과 발목의 정렬이 자연스러워요.':(ratio<0.6?'무릎 사이가 발목보다 많이 좁아요(X자 힌트). 스쿼트로 다리 안쪽·바깥 근육을 고르게 길러요.':'무릎 사이가 발목보다 많이 넓어요(O자 힌트). 정확한 자세의 스쿼트가 도움이 돼요.'),rx:['squatApp']});
     }
+    // 다리 정렬 대칭(참고): 화면상 엉덩이~발목 길이의 좌우 차이
+    const lenL=Math.hypot((a[23].x-a[27].x)*map.vw,(a[23].y-a[27].y)*map.vh);
+    const lenR=Math.hypot((a[24].x-a[28].x)*map.vw,(a[24].y-a[28].y)*map.vh);
+    if(lenL>30&&lenR>30){
+      const diff=Math.abs(lenL-lenR)/((lenL+lenR)/2)*100;
+      m.push({ic:'📐',nm:'다리 정렬 대칭 (참고)',val:diff,unit:'%',fmt:v=>v.toFixed(1),g:grade3(diff,2.5,5),max:8,
+        d:diff<2.5?'양쪽 다리 정렬이 대칭에 가까워요.':'화면상 양쪽 다리 길이가 '+diff.toFixed(1)+'% 달라 보여요. 골반 기울기나 서 있는 각도의 영향일 수 있어요.',rx:['sidePlank','balance']});
+    }
     return m;
   }
   function computeSide(a){
@@ -858,6 +901,9 @@ ACT.posture=(()=>{
     const back=fromVertDeg(sh,hip);
     m.push({ic:'🧎',nm:'상체 기울기 (굽은 등)',val:back,unit:'°',g:grade3(back,4,8),max:16,
       d:back<4?'등이 반듯하게 서 있어요.':'상체가 '+back.toFixed(1)+'° 앞으로 기울어 있어요. 가슴을 펴는 스트레칭을 자주 해요.',rx:['chestOpen','wallAngel','jacksApp']});
+    const sway=fromVertDeg(hip,ank);
+    m.push({ic:'🍑',nm:'골반 전방 이동',val:sway,unit:'°',g:grade3(sway,4,8),max:14,
+      d:sway<4?'골반이 발목 위에 안정적으로 놓여 있어요.':'골반이 발목보다 '+sway.toFixed(1)+'° 앞뒤로 밀려 있어요(스웨이 자세 힌트). 아랫배에 힘을 주고 골반을 중립으로 세워요.',rx:['wallStand','sidePlank']});
     const kneeA=angle(hip,knee,ank);
     m.push({ic:'🦵',nm:'무릎 펴짐',val:kneeA,unit:'°',fmt:v=>Math.round(v)+'',g:kneeA>=165?0:(kneeA>=150?1:2),max:180,gauge:Math.max(0,Math.min(1,(180-kneeA)/40)),
       d:kneeA>=165?'서 있을 때 무릎이 자연스럽게 펴져 있어요.':'서 있을 때 무릎이 '+Math.round(180-kneeA)+'°쯤 굽어 있어요. 허벅지 근력을 길러 곧게 서는 연습을 해요.',rx:['squatApp']});
@@ -907,8 +953,8 @@ ACT.posture=(()=>{
       dash((p(23).y+p(24).y)/2,'rgba(253,224,71,.55)');
       seg(7,8,'#fb7185',4); seg(11,12,'#fb4d4d',6); seg(23,24,'#fb7185',5);
       [7,8,11,12,23,24,25,26,27,28].forEach(i=>dot(i,'#ff5d5d'));
-      chip(p(12).x, (p(11).y+p(12).y)/2-40, '어깨 '+Math.abs(lineDeg(a[11],a[12])).toFixed(1)+'°');
-      chip(p(24).x, (p(23).y+p(24).y)/2-40, '골반 '+Math.abs(lineDeg(a[23],a[24])).toFixed(1)+'°');
+      chip(p(12).x, (p(11).y+p(12).y)/2-40, '어깨 '+tiltDeg(a[11],a[12]).toFixed(1)+'°');
+      chip(p(24).x, (p(23).y+p(24).y)/2-40, '골반 '+tiltDeg(a[23],a[24]).toFixed(1)+'°');
     }else{
       const L=visOf(a[7])+visOf(a[11])>=visOf(a[8])+visOf(a[12]);
       const e=L?7:8, s=L?11:12, h=L?23:24, k=L?25:26, an=L?27:28;
@@ -922,14 +968,137 @@ ACT.posture=(()=>{
     }
     return c.toDataURL('image/jpeg',0.82);
   }
+  // 종합 자세 점수(100점): 핵심 지표는 감점 가중
+  function calcScore(all){
+    let s=100;
+    all.forEach(x=>{
+      const heavy=/거북목|어깨 수평|골반 수평|상체 기울기/.test(x.nm);
+      if(x.g===1) s-=heavy?5:3;
+      else if(x.g===2) s-=heavy?12:8;
+    });
+    return Math.max(30,Math.round(s));
+  }
+  function loadImg(src){ return new Promise((res,rej)=>{ const im=new Image(); im.onload=()=>res(im); im.onerror=rej; im.src=src; }); }
+  function rr(g,x,y,w,h,r){ g.beginPath(); if(g.roundRect) g.roundRect(x,y,w,h,r); else g.rect(x,y,w,h); g.fill(); }
+  function wrapTxt(g,txt,x,y,maxW,lh){
+    let line='';
+    for(const ch of txt){
+      if(g.measureText(line+ch).width>maxW&&line){ g.fillText(line,x,y); y+=lh; line=ch; }
+      else line+=ch;
+    }
+    if(line){ g.fillText(line,x,y); y+=lh; }
+    return y;
+  }
+  // 리포트 전체를 세로 이미지(1080px)로 렌더링 — 갤러리 저장/공유용
+  async function buildImage(){
+    const W=1080,P=56,HMAX=6200;
+    const c=document.createElement('canvas'); c.width=W; c.height=HMAX;
+    const g=c.getContext('2d');
+    g.fillStyle='#050b18'; g.fillRect(0,0,W,HMAX);
+    let y=100;
+    g.textAlign='center';
+    g.fillStyle='#7fefff'; g.font='900 54px Pretendard'; g.fillText('AI 자세 분석 리포트',W/2,y); y+=46;
+    g.fillStyle='#5f7ea0'; g.font='500 26px Pretendard';
+    g.fillText(new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric'})+' · AI 카메라 측정',W/2,y); y+=80;
+    const col=G.band[2], cy=y+105;
+    g.beginPath(); g.arc(W/2,cy,100,0,Math.PI*2); g.strokeStyle='rgba(148,163,184,.15)'; g.lineWidth=20; g.stroke();
+    g.beginPath(); g.arc(W/2,cy,100,-Math.PI/2,-Math.PI/2+Math.PI*2*G.score/100);
+    g.strokeStyle=col; g.lineCap='round'; g.stroke();
+    g.fillStyle='#fff'; g.font='900 76px Pretendard'; g.fillText(G.score,W/2,cy+22);
+    g.fillStyle='#93a9c8'; g.font='700 24px Pretendard'; g.fillText('자세 점수',W/2,cy+58);
+    y=cy+155;
+    g.fillStyle=col; g.font='800 32px Pretendard'; g.fillText(G.band[0]+' · '+G.band[1],W/2,y); y+=40;
+    g.fillStyle='#5f7ea0'; g.font='500 23px Pretendard';
+    g.fillText('측정 신뢰도 '+G.rel+'% · 지표 '+(G.frontM.length+G.sideM.length)+'개 분석',W/2,y); y+=56;
+    try{
+      const [f,s]=await Promise.all([loadImg(G.snapF),loadImg(G.snapS)]);
+      const iw=(W-P*2-24)/2, ih=Math.round(iw*16/9);
+      g.drawImage(f,P,y,iw,ih); g.drawImage(s,P+iw+24,y,iw,ih);
+      g.fillStyle='#7dd3fc'; g.font='700 24px Pretendard';
+      g.fillText('정면 측정',P+iw/2,y+ih+36); g.fillText('측면 측정',P+iw+24+iw/2,y+ih+36);
+      y+=ih+76;
+    }catch(e){ y+=10; }
+    const gcol=['#a3e635','#fbbf24','#fb7185'];
+    const section=(title,list)=>{
+      g.textAlign='left'; g.fillStyle='#5f7ea0'; g.font='800 26px Pretendard'; g.fillText(title,P,y+8); y+=28;
+      list.forEach(x=>{
+        const ch=124, gc=gcol[x.g];
+        g.fillStyle='rgba(255,255,255,.05)'; rr(g,P,y,W-P*2,ch,18);
+        g.font='34px sans-serif'; g.fillStyle='#fff'; g.fillText(x.ic,P+24,y+50);
+        g.font='800 29px Pretendard'; g.fillStyle='#e8faff'; g.fillText(x.nm,P+80,y+50);
+        g.fillStyle=hexA(gc,0.16); rr(g,W-P-156,y+18,136,44,22);
+        g.fillStyle=gc; g.font='800 23px Pretendard'; g.textAlign='center'; g.fillText(GTXT[x.g],W-P-88,y+48);
+        g.textAlign='right';
+        const vs=(x.fmt?x.fmt(x.val):x.val.toFixed(1))+(x.unit||'');
+        g.fillStyle='#fff'; g.font='900 28px Pretendard'; g.fillText(vs,W-P-180,y+50);
+        g.textAlign='left';
+        const pct=Math.max(0.04,Math.min(1,(x.gauge!=null?x.gauge:(x.val/x.max))));
+        g.fillStyle='rgba(148,163,184,.18)'; rr(g,P+24,y+72,W-P*2-48,10,5);
+        g.fillStyle=gc; rr(g,P+24,y+72,(W-P*2-48)*pct,10,5);
+        g.fillStyle='#93a9c8'; g.font='500 22px Pretendard';
+        g.fillText(x.d.length>44?x.d.slice(0,44)+'…':x.d,P+24,y+108);
+        y+=ch+16;
+      });
+      y+=24;
+    };
+    section('정면 분석',G.frontM);
+    section('측면 분석',G.sideM);
+    g.textAlign='left'; g.fillStyle='#5f7ea0'; g.font='800 26px Pretendard'; g.fillText('맞춤 운동 처방',P,y+8); y+=28;
+    (G.rxKeys||[]).forEach(k=>{
+      const r=RX[k]; if(!r) return;
+      const ch=150;
+      g.fillStyle='rgba(34,211,238,.07)'; rr(g,P,y,W-P*2,ch,18);
+      g.font='32px sans-serif'; g.fillStyle='#fff'; g.fillText(r.ic,P+24,y+48);
+      g.font='800 28px Pretendard'; g.fillStyle='#e8faff'; g.fillText(r.nm,P+76,y+48);
+      g.fillStyle='#a3e635'; g.font='800 23px Pretendard'; g.textAlign='right'; g.fillText(r.dose,W-P-24,y+48); g.textAlign='left';
+      g.fillStyle='#9fb6d8'; g.font='500 23px Pretendard';
+      wrapTxt(g,r.how,P+24,y+90,W-P*2-48,32);
+      y+=ch+14;
+    });
+    y+=24;
+    g.fillStyle='#8093ad'; g.font='500 21px Pretendard';
+    y=wrapTxt(g,'⚠️ 이 결과는 카메라 기반 참고용 자세 스크리닝이며 의학적 진단이 아닙니다. 통증이 있거나 수치가 계속 크게 나오면 보건 선생님 또는 병원과 상담하세요.',P,y+16,W-P*2,30);
+    y+=44;
+    g.textAlign='center'; g.fillStyle='#3f5876'; g.font='700 22px Pretendard';
+    g.fillText('AI 모션 트레이닝 센터 · 영상은 기기 안에서만 처리됩니다',W/2,y); y+=34;
+    const out=document.createElement('canvas'); out.width=W; out.height=Math.min(HMAX,y+20);
+    out.getContext('2d').drawImage(c,0,0);
+    return out;
+  }
+  async function saveReportImage(){
+    const btn=$('rpSave');
+    if(btn){ btn.disabled=true; btn.textContent='이미지 만드는 중…'; }
+    try{
+      const cv=await buildImage();
+      const blob=await new Promise(res=>cv.toBlob(res,'image/png'));
+      const name='자세분석리포트_'+new Date().toISOString().slice(0,10)+'.png';
+      const file=new File([blob],name,{type:'image/png'});
+      // 모바일: 공유 시트로 갤러리(사진) 저장 / PC: 파일 다운로드
+      if(navigator.canShare&&navigator.canShare({files:[file]})&&navigator.share){
+        await navigator.share({files:[file],title:'AI 자세 분석 리포트'});
+      }else{
+        const a=document.createElement('a');
+        a.href=URL.createObjectURL(blob); a.download=name;
+        document.body.appendChild(a); a.click();
+        setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },800);
+      }
+    }catch(e){}
+    if(btn){ btn.disabled=false; btn.textContent='📸 이미지 저장'; }
+  }
   function buildReport(){
     const all=[...G.frontM,...G.sideM];
     const worst=Math.max(...all.map(x=>x.g));
     const cnt=[0,0,0]; all.forEach(x=>cnt[x.g]++);
     const rxKeys=[...new Set(all.filter(x=>x.g>0).flatMap(x=>x.rx))];
     if(!rxKeys.length) rxKeys.push('squatApp','jacksApp');
+    G.rxKeys=rxKeys;
+    G.score=calcScore(all);
+    G.band=G.score>=90?['A','훌륭해요!','#a3e635']:G.score>=80?['B','좋아요, 조금만 다듬어요','#22d3ee']:G.score>=70?['C','몇 가지 관리가 필요해요','#fbbf24']:['D','꾸준한 관리가 필요해요','#fb7185'];
     const gcol=['#a3e635','#fbbf24','#fb7185'];
     let h='<h2>자세 분석 리포트</h2><div class="rp-date">'+new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric'})+' · AI 카메라 측정</div>';
+    h+='<div class="score-wrap"><div class="score-ring" style="--p:'+G.score+';--c:'+G.band[2]+'"><span>'+G.score+'</span></div>'
+      +'<div class="score-side"><div class="sc-band" style="color:'+G.band[2]+'">'+G.band[0]+' · '+G.band[1]+'</div>'
+      +'<div class="sc-rel">측정 신뢰도 '+G.rel+'%<br>지표 '+all.length+'개 정밀 분석</div></div></div>';
     h+='<div class="rp-snaps"><figure><img src="'+G.snapF+'" alt="정면"><figcaption>정면 측정</figcaption></figure>';
     h+='<figure><img src="'+G.snapS+'" alt="측면"><figcaption>측면 측정</figcaption></figure></div>';
     h+='<div class="rp-summary"><span class="sm-chip g'+worst+'">종합: '+(worst===0?'🟢 아주 좋아요!':worst===1?'🟡 몇 가지만 신경 써요':'🔴 꾸준한 관리가 필요해요')+'</span>';
@@ -956,21 +1125,82 @@ ACT.posture=(()=>{
         +(r.go?'<button class="rx-go" data-go="'+r.go+'">▶ 지금 바로 하기</button>':'')+'</div>';
     });
     h+='<div class="rp-warn">⚠️ 이 결과는 카메라 기반 <b>참고용 자세 스크리닝</b>이며 의학적 진단이 아니에요. 옷 모양·서 있는 위치에 따라 수치가 달라질 수 있어요. 통증이 있거나 수치가 계속 크게 나오면 보건 선생님 또는 병원과 상담하세요.</div>';
-    h+='<div class="rp-btns"><button class="ghost" id="rpMenu">메뉴로</button><button class="cta" id="rpAgain">다시 측정</button></div>';
+    h+='<div class="rp-btns"><button class="ghost" id="rpMenu">메뉴로</button><button class="ghost" id="rpSave">📸 이미지 저장</button><button class="cta" id="rpAgain">다시 측정</button></div>';
     $('reportBody').innerHTML=h;
+    $('rpSave').onclick=saveReportImage;
     $('rpMenu').onclick=()=>{ $('reportScr').classList.remove('show'); goHub(); };
     $('rpAgain').onclick=()=>{ $('reportScr').classList.remove('show'); openIntro('posture'); };
     document.querySelectorAll('.rx-go').forEach(b=>b.onclick=()=>{ $('reportScr').classList.remove('show'); openIntro(b.dataset.go); });
     hideAll(); running=false; current=null; setHud(false);
     $('reportScr').classList.add('show'); $('reportScr').scrollTop=0;
   }
+  // 스캔 연출: 바디 브래킷 + 왕복 스캔라인 + 실시간 각도 리드아웃 + 진행바
+  function drawScan(lms,pct,label){
+    const ids=[0,7,8,11,12,15,16,23,24,25,26,27,28].filter(i=>lms[i]&&visOf(lms[i])>0.3);
+    if(ids.length<4) return;
+    let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+    ids.forEach(i=>{ const p=toPx(lms[i]); if(p.x<x0)x0=p.x; if(p.y<y0)y0=p.y; if(p.x>x1)x1=p.x; if(p.y>y1)y1=p.y; });
+    const pad=34; x0-=pad; y0-=pad*1.5; x1+=pad; y1+=pad;
+    const now=performance.now();
+    ctx.save();
+    // 코너 브래킷
+    ctx.strokeStyle='rgba(45,212,191,.95)'; ctx.lineWidth=3; ctx.shadowBlur=10; ctx.shadowColor='#2dd4bf';
+    const L=26;
+    [[x0,y0,1,1],[x1,y0,-1,1],[x0,y1,1,-1],[x1,y1,-1,-1]].forEach(b=>{
+      ctx.beginPath(); ctx.moveTo(b[0]+b[2]*L,b[1]); ctx.lineTo(b[0],b[1]); ctx.lineTo(b[0],b[1]+b[3]*L); ctx.stroke();
+    });
+    // 위↔아래 왕복 스캔라인
+    const t=(now%1600)/1600, yy=y0+(y1-y0)*(t<0.5?t*2:2-t*2);
+    const gr=ctx.createLinearGradient(x0,0,x1,0);
+    gr.addColorStop(0,'rgba(45,212,191,0)'); gr.addColorStop(0.5,'rgba(45,212,191,.95)'); gr.addColorStop(1,'rgba(45,212,191,0)');
+    ctx.strokeStyle=gr; ctx.lineWidth=3; ctx.shadowBlur=18;
+    ctx.beginPath(); ctx.moveTo(x0,yy); ctx.lineTo(x1,yy); ctx.stroke();
+    ctx.shadowBlur=0;
+    // 진행바(박스 하단)
+    ctx.fillStyle='rgba(148,163,184,.25)'; ctx.fillRect(x0,y1+14,x1-x0,6);
+    ctx.fillStyle='#2dd4bf'; ctx.fillRect(x0,y1+14,(x1-x0)*pct/100,6);
+    // 라벨 + 실시간 수치 리드아웃
+    ctx.fillStyle='#5eead4'; ctx.font='800 '+Math.max(14,map.W/26)+'px Pretendard'; ctx.textAlign='left';
+    ctx.fillText(label+' '+pct+'%',Math.max(8,x0),Math.max(24,y0-12));
+    const shd=tiltDeg(lms[11],lms[12]), pvd=tiltDeg(lms[23],lms[24]);
+    ctx.font='700 '+Math.max(11,map.W/34)+'px Pretendard'; ctx.fillStyle='rgba(125,211,252,.95)';
+    const rx0=Math.min(x1+10,map.W-130), ry0=y0+(y1-y0)*0.24;
+    ctx.fillText('SHOULDER '+shd.toFixed(1)+'°',rx0,ry0);
+    ctx.fillText('PELVIS '+pvd.toFixed(1)+'°',rx0,ry0+26);
+    ctx.fillText('TRACK '+ids.length+' PTS',rx0,ry0+52);
+    ctx.restore();
+  }
   return {
     key:'posture', hud:{timer:true},
-    intro:{emoji:'🧍',title:'AI 자세 분석',desc:'<b>① 정면</b>으로 서서 잠깐, <b>② 옆모습</b>으로 서서 잠깐 —<br>두 번만 가만히 서 있으면 자세를 분석하고 <b>맞춤 운동을 처방</b>해요.<br>발끝까지 전신이 보이게 서 주세요.'},
-    start(){ G.step='front'; G.buf=[]; G.stableAt=null; G.lastMid=null;
-      G.frontM=null; G.sideM=null; G.snapF=null; G.snapS=null;
-      $('timerUnit').textContent='HOLD'; $('timerVal').textContent='0%'; },
+    intro:{emoji:'🧍',title:'AI 자세 분석',desc:'<b>① 정면 4초</b> + <b>② 측면 4초</b> 정밀 스캔으로<br><b>12가지 지표</b>를 분석해 <b>자세 점수</b>와 맞춤 운동을 처방해요.<br>발끝까지 전신이 보이게 서 주세요.'},
+    start(){ G.step='front'; G.buf=[]; G.stableAt=null; G.lastMid=null; G.mvs=[];
+      G.frontM=null; G.sideM=null; G.snapF=null; G.snapS=null; G.rel=97; G.procUntil=0;
+      $('timerUnit').textContent='SCAN'; $('timerVal').textContent='0%'; },
     frame(lms){
+      const now=performance.now();
+      // 분석 프로세싱 연출 단계 (스캔 완료 후)
+      if(G.step==='frontProc'||G.step==='sideProc'){
+        if(lms) drawPose(lms,'#134e4a');
+        ctx.save();
+        const cx2=map.W/2, cy2=map.H*0.42, R=Math.min(map.W,map.H)/5;
+        ctx.setLineDash([18,14]); ctx.lineDashOffset=-(now/6)%64;
+        ctx.strokeStyle='rgba(45,212,191,.9)'; ctx.lineWidth=4; ctx.shadowBlur=16; ctx.shadowColor='#2dd4bf';
+        ctx.beginPath(); ctx.arc(cx2,cy2,R,0,Math.PI*2); ctx.stroke();
+        ctx.setLineDash([]); ctx.shadowBlur=0;
+        ctx.fillStyle='#5eead4'; ctx.font='800 '+Math.max(16,map.W/18)+'px Pretendard'; ctx.textAlign='center';
+        const dots='·'.repeat(1+Math.floor(now/380)%3);
+        ctx.fillText(G.step==='frontProc'?'정면 데이터 분석 중'+dots:'AI 12개 지표 종합 분석'+dots,cx2,cy2+R+54);
+        ctx.restore();
+        $('timerVal').textContent='···';
+        if(now>=G.procUntil){
+          if(G.step==='frontProc'){
+            G.step='side'; G.buf=[]; G.stableAt=null; G.lastMid=null;
+            beep(660,0.12);
+            setState('좋아요! 이제 옆으로 돌아 옆모습이 보이게 서요','#22d3ee');
+          }else buildReport();
+        }
+        return;
+      }
       if(!lms){ G.buf=[]; G.stableAt=null; setState('전신이 보이게 서 주세요','#94c9dd'); $('timerVal').textContent='0%'; return; }
       const core=[11,12,23,24,25,26];
       let sum=0; core.forEach(i=>sum+=visOf(lms[i]));
@@ -984,32 +1214,36 @@ ACT.posture=(()=>{
         setState(want==='front'?'카메라를 정면으로 바라보고 바르게 서요':'옆으로 돌아 옆모습이 보이게 서요 (한쪽 어깨가 카메라 쪽)', '#22d3ee');
         return;
       }
-      // 안정(정지) 감지: 골반 중점 이동량
+      // 안정(정지) 감지: 골반 중점 이동량 (신뢰도 계산에도 사용)
       const mid={x:(lms[23].x+lms[24].x)/2, y:(lms[23].y+lms[24].y)/2};
-      const now=performance.now();
       if(G.lastMid){
         const mv=Math.hypot(mid.x-G.lastMid.x,(mid.y-G.lastMid.y))*map.vh;
         if(mv>7){ G.stableAt=null; G.buf=[]; }
+        G.mvs.push(mv); if(G.mvs.length>300) G.mvs.shift();
       }
       G.lastMid=mid;
       if(!G.stableAt) G.stableAt=now;
       G.buf.push(IDX.reduce((o,i)=>(o[i]={x:lms[i].x,y:lms[i].y,visibility:visOf(lms[i])},o),{}));
-      if(G.buf.length>80) G.buf.shift();
+      if(G.buf.length>140) G.buf.shift();
       const held=(now-G.stableAt)/1000;
       const pct=Math.min(100,Math.round(held/HOLD*100));
       $('timerVal').textContent=pct+'%';
-      setState(want==='front'?'그대로 가만히… 정면 측정 중':'그대로 가만히… 측면 측정 중', '#a3e635');
+      drawScan(lms,pct,want==='front'?'FRONT SCAN':'SIDE SCAN');
+      setState(want==='front'?'그대로 가만히… 정면 정밀 스캔 중':'그대로 가만히… 측면 정밀 스캔 중', '#a3e635');
       if(held>=HOLD&&G.buf.length>=20){
-        const a=avgFrames(G.buf.slice(-40));
+        const a=avgFrames(G.buf.slice(-60));
         if(want==='front'){
           G.frontM=computeFront(a); G.snapF=snapshot(a,'front');
-          G.step='side'; G.buf=[]; G.stableAt=null;
+          G.step='frontProc'; G.procUntil=now+1700;
           beep(880,0.2); buzz([0,60,50,60]);
-          setState('정면 완료! 이제 옆으로 돌아 서 주세요','#a3e635');
+          setState('정면 스캔 완료! 데이터 분석 중…','#2dd4bf');
         }else{
           G.sideM=computeSide(a); G.snapS=snapshot(a,'side');
+          const avgMv=G.mvs.length?G.mvs.reduce((x,y)=>x+y,0)/G.mvs.length:0;
+          G.rel=Math.max(86,Math.min(99,Math.round(99-avgMv*2.2)));
+          G.step='sideProc'; G.procUntil=now+2300;
           beep(1040,0.25); buzz([0,80,50,80]);
-          buildReport();
+          setState('측면 스캔 완료! AI가 지표를 종합하는 중…','#2dd4bf');
         }
       }
     }
