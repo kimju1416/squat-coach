@@ -90,6 +90,15 @@
   .hcard::after{content:'';position:absolute;inset:0;border-radius:18px;pointer-events:none;
     border:1px solid transparent;background:linear-gradient(135deg,var(--c,rgba(34,211,238,.35)),transparent 55%) border-box;
     -webkit-mask:linear-gradient(#fff 0 0) padding-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;}
+  .hcard.feat{background:linear-gradient(135deg,rgba(232,121,249,.14),rgba(34,211,238,.08));border-color:rgba(232,121,249,.4);
+    padding:20px 18px 18px;box-shadow:0 0 30px rgba(232,121,249,.15);}
+  .hcard.feat .ic{font-size:38px;}
+  .hcard.feat .tt{font-size:19px;}
+  .hcard.feat .dd{font-size:12.5px;}
+  .new-badge{display:inline-block;background:linear-gradient(135deg,#e879f9,#a78bfa);color:#fff;font-size:9.5px;font-weight:900;
+    letter-spacing:1px;border-radius:99px;padding:2px 8px;vertical-align:2px;box-shadow:0 0 10px rgba(232,121,249,.6);
+    animation:badgePulse 1.6s ease-in-out infinite;}
+  @keyframes badgePulse{0%,100%{transform:scale(1);}50%{transform:scale(1.08);}}
   .hub-foot{text-align:center;font-size:10.5px;color:#4e6a8a;margin-top:22px;line-height:1.7;}
 
   /* ===== 인트로 ===== */
@@ -215,6 +224,10 @@
       <div class="hub-grid">
         <button class="hcard" data-ex="squat" style="--c:rgba(34,211,238,.5);--tc:#22d3ee"><span class="ic">🏋️</span><div class="tt">스쿼트</div><div class="dd">깊이 앉았다 일어나면 자동으로 1회</div><div class="bst" data-best="squat"></div></button>
         <button class="hcard" data-ex="jacks" style="--c:rgba(163,230,53,.5);--tc:#a3e635"><span class="ic">🤸</span><div class="tt">팔벌려뛰기</div><div class="dd">팔 올리고 다리 벌리면 1회</div><div class="bst" data-best="jacks"></div></button>
+      </div>
+      <div class="hub-sec">🔥 몰입형 리듬 게임 <span class="new-badge">NEW</span></div>
+      <div class="hub-grid">
+        <button class="hcard wide feat" data-ex="rhythm" style="--c:rgba(232,121,249,.6);--tc:#e879f9"><span class="ic">🏃</span><div class="tt">리듬 러너</div><div class="dd">화면 큐에 맞춰 점프·좌우 기울기·숙이기·터치! 진짜 몸을 움직였는지 AI가 확인하는 몰입형 러닝 리듬게임</div><div class="bst" data-best="rhythm"></div></button>
       </div>
       <div class="hub-sec">미니게임 아케이드</div>
       <div class="hub-grid">
@@ -563,7 +576,7 @@ const best={
 function bestLabel(k){
   const v=best.get(k);
   if(v==null) return '';
-  if(k==='mole'||k==='balloon'||k==='fruit') return '🏆 최고 '+v+'점';
+  if(k==='mole'||k==='balloon'||k==='fruit'||k==='rhythm') return '🏆 최고 '+v+'점';
   if(k==='reaction2') return '🏆 최고 '+v+'개';
   if(k==='sequence2') return '🏆 최고 '+v+'세트';
   if(k==='tissue') return '🏆 최고 '+v+'장';
@@ -1313,6 +1326,119 @@ ACT.dodge=(()=>{
       });
       if(dead){ beep(160,0.3,0.35); buzz([0,120,60,120]); this.finish(); return; }
       if(el<3) setState('좌우로 움직여 피해요!','#f97316');
+    }
+  };
+})();
+
+/* ---------- 리듬 러너 (몰입형 리듬 게임) ---------- */
+ACT.rhythm=(()=>{
+  const G={};
+  const DUR=72;                          // 러닝 길이(초)
+  const BPM=100, BEAT_MS=60000/BPM;      // 워밍업 템포(살짝 가벼운 움직임 강도)
+  const LEAD_MS=1500, JUDGE_MS=420;      // 큐 이동시간 · 판정창
+  const TYPES=['jump','duck','left','right','touch'];
+  const META={
+    jump:{ic:'⬆️',col:'#a3e635',label:'점프! (양팔 위로)'},
+    duck:{ic:'⬇️',col:'#fbbf24',label:'숙여요! (몸 낮추기)'},
+    left:{ic:'⬅️',col:'#22d3ee',label:'왼쪽으로 기울여요'},
+    right:{ic:'➡️',col:'#a78bfa',label:'오른쪽으로 기울여요'},
+    touch:{ic:'👆',col:'#f0abfc',label:'큐를 손으로 터치'}
+  };
+  function vpx(l){ return {x:l.x*map.vw,y:l.y*map.vh}; }
+  // 화면비 무관하게 어깨너비 단위로 판정(카메라 거리 달라도 일관) — 기준선은 느린 EMA로 계속 보정(제자리 이동 드리프트 흡수)
+  function updatePose(lms){
+    const sh1=vpx(lms[11]), sh2=vpx(lms[12]), hp1=vpx(lms[23]), hp2=vpx(lms[24]);
+    const shW=Math.max(20,Math.hypot(sh1.x-sh2.x,sh1.y-sh2.y));
+    const shCY=(sh1.y+sh2.y)/2, hipCX=(hp1.x+hp2.x)/2;
+    if(G.baseCX==null){ G.baseCX=hipCX; G.baseSY=shCY; }
+    else{ G.baseCX+=(hipCX-G.baseCX)*0.015; G.baseSY+=(shCY-G.baseSY)*0.015; }
+    const leanDelta=hipCX-G.baseCX, duckDelta=shCY-G.baseSY;
+    const wl=vpx(lms[15]), wr=vpx(lms[16]);
+    const jumpUp=visOf(lms[15])>0.3&&visOf(lms[16])>0.3&&wl.y<shCY-shW*0.1&&wr.y<shCY-shW*0.1;
+    G.pose={ jump:jumpUp, duck:duckDelta>shW*0.5, left:leanDelta>shW*0.6, right:leanDelta<-shW*0.6 };
+  }
+  function pickType(){
+    let t; do{ t=TYPES[(Math.random()*TYPES.length)|0]; }while(t===G.lastType&&Math.random()<0.85);
+    G.lastType=t; return t;
+  }
+  return {
+    key:'rhythm', hud:{counter:true,timer:true,end:true}, _G:G,
+    intro:{emoji:'🏃',title:'리듬 러너',desc:'큐가 오른쪽에서 다가와 <b>NOW</b> 선에 닿는 순간!<br>⬆️점프(양팔 위로) · ⬇️숙이기 · ⬅️➡️몸 기울이기 · 👆터치<br>몸으로 반응해서 콤보를 이어가요! 리듬을 놓치지 마세요 🎵'},
+    start(){
+      G.t0=null; G.score=0; G.combo=0; G.maxCombo=0; G.hit=0; G.total=0;
+      G.cues=[]; G.nextSpawnAt=0; G.baseCX=null; G.baseSY=null; G.pose={}; G.lastBeat=-1; G.pop=null; G.lastType=null;
+      $('repNum').textContent='0'; $('repLbl').textContent='SCORE'; $('timerUnit').textContent='SEC';
+    },
+    end(){ this.finish(); },
+    finish(){
+      const prev=+(best.get('rhythm')||0); if(G.score>prev) best.set('rhythm',G.score);
+      const acc=G.total?Math.round(G.hit/G.total*100):0;
+      showResult({num:G.score,sub:'점!'+(G.score>prev&&G.score>0?' 🏆 기록 경신!':''),
+        detail:'정확도 <span class="nb">'+acc+'%</span> · 최대 콤보 <span class="nb">'+G.maxCombo+'</span>'
+          +(acc>=90?'<br>완벽한 몰입! 🔥':acc>=70?'<br>리듬을 잘 탔어요!':'<br>다음엔 더 정확하게!')});
+    },
+    frame(lms){
+      const now=performance.now();
+      if(!G.t0){ G.t0=now; G.nextSpawnAt=now+900; }
+      const el=(now-G.t0)/1000, remain=Math.max(0,DUR-el);
+      $('timerVal').textContent=Math.ceil(remain);
+      const NOW_X=map.W*0.24, LANE_Y=map.H*0.30, SPAWN_X=map.W+60;
+      // 배경 스피드라인(달리는 몰입감)
+      ctx.save(); ctx.strokeStyle='rgba(232,121,249,.12)'; ctx.lineWidth=2;
+      for(let i=0;i<5;i++){ const yy=LANE_Y-70+i*36+((now/9)%36);
+        ctx.beginPath(); ctx.moveTo(map.W,yy); ctx.lineTo(map.W*0.15,yy); ctx.stroke(); }
+      ctx.restore();
+      // 하이웨이 트랙 + NOW 게이트
+      const grad=ctx.createLinearGradient(NOW_X-40,0,map.W,0);
+      grad.addColorStop(0,'rgba(232,121,249,.55)'); grad.addColorStop(1,'rgba(232,121,249,0)');
+      ctx.strokeStyle=grad; ctx.lineWidth=3;
+      ctx.beginPath(); ctx.moveTo(NOW_X-40,LANE_Y); ctx.lineTo(map.W,LANE_Y); ctx.stroke();
+      ctx.save(); ctx.strokeStyle='#e879f9'; ctx.lineWidth=4; ctx.shadowBlur=16; ctx.shadowColor='#e879f9';
+      ctx.beginPath(); ctx.moveTo(NOW_X,LANE_Y-46); ctx.lineTo(NOW_X,LANE_Y+46); ctx.stroke(); ctx.restore();
+
+      let hands=[];
+      if(lms){ drawPose(lms,'#e879f9'); updatePose(lms); hands=hands2(lms); drawHandGlow(hands,'#e879f9'); }
+      else{ G.pose={}; setState('몸이 보이게 서 주세요','#fbbf24'); }
+
+      // 배경 비트(킥/하이햇 — 워밍업 템포)
+      const beatIdx=Math.floor(el*1000/BEAT_MS);
+      if(beatIdx!==G.lastBeat&&remain>0){ G.lastBeat=beatIdx;
+        if(beatIdx%2===0) beep(110,0.06,0.14); else beep(2600,0.02,0.06); }
+
+      if(remain>LEAD_MS/1000+0.3&&now>=G.nextSpawnAt){
+        G.cues.push({type:pickType(),hitTime:now+LEAD_MS,resolved:false});
+        G.nextSpawnAt=now+BEAT_MS*2+(Math.random()-0.5)*BEAT_MS*0.5;
+      }
+      G.cues=G.cues.filter(c=>{
+        const x=NOW_X+(c.hitTime-now)/LEAD_MS*(SPAWN_X-NOW_X);
+        if(x<-70) return false;
+        const m=META[c.type];
+        const inWin=Math.abs(now-c.hitTime)<JUDGE_MS;
+        if(!c.resolved){
+          const ok=c.type==='touch' ? (inWin&&hands.length&&anySegHit(hands,x,LANE_Y,44)) : (inWin&&G.pose[c.type]);
+          if(ok){
+            c.resolved=true; G.hit++; G.total++; G.combo++; G.maxCombo=Math.max(G.maxCombo,G.combo);
+            const gain=10+Math.min(20,(G.combo-1)*2);
+            G.score+=gain;
+            const n=$('repNum'); n.textContent=G.score; n.classList.remove('pop'); void n.offsetWidth; n.classList.add('pop');
+            G.pop={x:NOW_X,y:LANE_Y,t:now,txt:'+'+gain+(G.combo>=5?' 🔥x'+G.combo:''),col:m.col};
+            setState(G.combo>=5?G.combo+'콤보! 완벽해요!':'좋아요!','#a3e635');
+            beep(700+Math.min(500,G.combo*20),0.09); buzz(30);
+          }else if(now-c.hitTime>JUDGE_MS){
+            c.resolved=true; G.total++; G.combo=0;
+            setState(m.label+' — 놓쳤어요','#fb7185'); beep(180,0.1);
+          }
+        }
+        drawTarget(x,LANE_Y,c.resolved?30:38,m.col,m.ic);
+        return true;
+      });
+      if(G.pop&&now-G.pop.t<550){
+        const a=1-(now-G.pop.t)/550;
+        ctx.font='900 '+Math.max(18,map.W/16)+'px Pretendard'; ctx.textAlign='center';
+        ctx.fillStyle=hexA(G.pop.col,a);
+        ctx.fillText(G.pop.txt,G.pop.x,G.pop.y-60-(1-a)*40);
+      }
+      if(remain<=0&&G.cues.length===0) this.finish();
     }
   };
 })();
