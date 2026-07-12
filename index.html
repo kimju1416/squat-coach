@@ -154,6 +154,23 @@
   .rp-warn{margin-top:18px;font-size:11px;color:#8093ad;background:rgba(255,255,255,.04);border:1px solid rgba(148,163,184,.2);
     border-radius:12px;padding:12px 14px;line-height:1.7;text-align:left;}
   .rp-btns{display:flex;gap:12px;justify-content:center;margin-top:22px;flex-wrap:wrap;}
+  .toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:rgba(8,20,40,.94);
+    border:1px solid rgba(251,113,133,.5);color:#fda4af;padding:12px 20px;border-radius:14px;font-size:13px;font-weight:700;
+    z-index:80;box-shadow:0 8px 24px rgba(0,0,0,.4);opacity:0;pointer-events:none;transition:opacity .25s;max-width:86vw;text-align:center;}
+  .toast.show{opacity:1;}
+  /* 자세분석: 유형 배지·촬영품질·종합소견·이력 추이 */
+  .type-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(45,212,191,.1);border:1px solid rgba(45,212,191,.35);
+    border-radius:99px;padding:9px 18px;font-size:14.5px;font-weight:900;color:#5eead4;margin:2px 0 12px;}
+  .quality-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:14px;}
+  .q-chip{font-size:10.5px;font-weight:700;color:#7dd3fc;background:rgba(125,211,252,.08);border:1px solid rgba(125,211,252,.25);
+    border-radius:99px;padding:5px 11px;}
+  .narrative{font-size:13px;color:#c8dcf0;line-height:1.85;background:rgba(255,255,255,.035);border-radius:14px;
+    padding:14px 16px;margin-bottom:16px;text-align:left;}
+  .trend-wrap{display:flex;align-items:center;gap:14px;background:rgba(255,255,255,.04);border:1px solid rgba(148,163,184,.18);
+    border-radius:16px;padding:13px 16px;margin-bottom:16px;text-align:left;}
+  .trend-bars{display:flex;align-items:flex-end;gap:5px;height:44px;flex:0 0 auto;}
+  .trend-bars i{display:block;width:9px;border-radius:3px 3px 0 0;background:linear-gradient(180deg,#2dd4bf,#0891b2);}
+  .trend-txt{font-size:11.5px;color:#9fb6d8;line-height:1.6;}
 </style>
 </head>
 <body>
@@ -256,9 +273,14 @@ function updateMap(){
   const W=window.innerWidth||375, H=window.innerHeight||812;   // 숨겨진 embed 등 0×0 보고 방어
   const vw=(camOn&&video.videoWidth)?video.videoWidth:720;
   const vh=(camOn&&video.videoHeight)?video.videoHeight:1280;
-  const s=Math.max(W/vw, H/vh);
-  map.s=s; map.ox=(W-vw*s)/2; map.oy=(H-vh*s)/2; map.W=W; map.H=H; map.vw=vw; map.vh=vh;
+  // 화면비와 영상비 차이가 크면(태블릿 등) cover 대신 contain — 전신이 잘려 "카메라가 너무 가까운" 느낌 방지
+  const vA=vw/vh, sA=W/H;
+  const mismatch=Math.max(vA/sA,sA/vA);
+  const mode=mismatch>1.28?'contain':'cover';
+  const s=mode==='contain'?Math.min(W/vw,H/vh):Math.max(W/vw,H/vh);
+  map.s=s; map.ox=(W-vw*s)/2; map.oy=(H-vh*s)/2; map.W=W; map.H=H; map.vw=vw; map.vh=vh; map.mode=mode;
   canvas.width=W; canvas.height=H;
+  if(camOn) video.style.objectFit=mode;
 }
 window.addEventListener('resize',updateMap);
 updateMap();
@@ -358,12 +380,24 @@ async function loadModels(){
 async function startCam(){
   if(DEBUG){ camOn=true; updateMap(); return; }
   if(camOn&&video.srcObject) return;
-  const stream=await navigator.mediaDevices.getUserMedia({
-    video:{ facingMode:facing, width:{ideal:1280}, height:{ideal:720} }, audio:false });
+  const landscape=window.innerWidth>window.innerHeight;
+  // 태블릿 등 화면비가 다른 기기도 전신이 잘 잡히도록 화면 방향에 맞춰 요청 + 불필요한 크롭/줌 방지
+  const wide={ facingMode:facing,
+    width:{ideal:landscape?1920:1080}, height:{ideal:landscape?1080:1920},
+    resizeMode:{ideal:'none'} };
+  let stream;
+  try{ stream=await navigator.mediaDevices.getUserMedia({video:wide,audio:false}); }
+  catch(e){ stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:facing,width:{ideal:1280},height:{ideal:720}},audio:false}); }
   video.srcObject=stream;
   video.classList.toggle('rear', facing==='environment');
   await new Promise(r=>video.onloadedmetadata=r);
   await video.play();
+  // 일부 태블릿은 기본 디지털 줌이 걸려 있어 전신이 화면 밖으로 나감 → 지원되면 최소 줌으로 리셋
+  try{
+    const track=stream.getVideoTracks()[0];
+    const caps=track.getCapabilities&&track.getCapabilities();
+    if(caps&&caps.zoom&&caps.zoom.min!=null) await track.applyConstraints({advanced:[{zoom:caps.zoom.min}]});
+  }catch(e){}
   camOn=true; updateMap();
 }
 function stopCam(){
@@ -425,6 +459,12 @@ function drawHandGlow(pts,col){
   ctx.restore();
 }
 function setState(t,c){ const s=$('stateTxt'); s.textContent=t; s.style.color=c||'#22d3ee'; }
+function toast(msg){
+  let t=document.getElementById('toastEl');
+  if(!t){ t=document.createElement('div'); t.id='toastEl'; t.className='toast'; document.body.appendChild(t); }
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove('show'),2600);
+}
 
 /* ---------- 라우터 ---------- */
 const scrs=['hubScr','introScr','resultScr'];
@@ -861,9 +901,9 @@ ACT.posture=(()=>{
   function avgFrames(buf){
     const out={};
     IDX.forEach(i=>{
-      let x=0,y=0,v=0;
-      buf.forEach(f=>{ x+=f[i].x; y+=f[i].y; v+=visOf(f[i]); });
-      out[i]={x:x/buf.length,y:y/buf.length,visibility:v/buf.length};
+      let x=0,y=0,z=0,v=0;
+      buf.forEach(f=>{ x+=f[i].x; y+=f[i].y; z+=(f[i].z||0); v+=visOf(f[i]); });
+      out[i]={x:x/buf.length,y:y/buf.length,z:z/buf.length,visibility:v/buf.length};
     });
     return out;
   }
@@ -1008,6 +1048,57 @@ ACT.posture=(()=>{
     });
     return Math.max(30,Math.round(s));
   }
+  function findG(list,sub){ const m=list.find(x=>x.nm.includes(sub)); return m?m.g:0; }
+  function findVal(list,sub){ const m=list.find(x=>x.nm.includes(sub)); return m?m.val:0; }
+  // 정면 응시 체크(진단 아님, 촬영 조건 확인용): 좌우 귀 깊이(z) 차이로 고개가 돌아간 정도를 대략 추정
+  function frontFacingCheck(a){
+    if(!a||visOf(a[7])<0.3||visOf(a[8])<0.3) return null;
+    const earSpan=Math.abs(a[7].x-a[8].x)*map.vw;
+    if(earSpan<4) return null;
+    const zDiff=Math.abs((a[7].z||0)-(a[8].z||0))*map.vw;
+    const ratio=zDiff/earSpan;
+    return {ok:ratio<0.35,ratio};
+  }
+  const TYPES={
+    거북목:['거북목형','🐢','목이 어깨보다 앞으로 나온 경향이 두드러져요.'],
+    굽은등:['굽은등형','🧎','등이 앞으로 굽는 경향이 두드러져요.'],
+    스웨이백:['스웨이백형','🍑','골반이 발목보다 앞뒤로 밀린 경향이 두드러져요.'],
+    좌우비대칭:['좌우비대칭형','⚖️','어깨나 골반이 한쪽으로 기운 경향이 두드러져요.'],
+    체중쏠림:['체중쏠림형','🧍','몸의 중심이 한쪽으로 치우친 경향이 두드러져요.']
+  };
+  function classifyType(frontM,sideM){
+    const cand=[
+      ['거북목',findG(sideM,'거북목')],['굽은등',findG(sideM,'상체 기울기')],['스웨이백',findG(sideM,'골반 전방')],
+      ['좌우비대칭',Math.max(findG(frontM,'어깨 수평'),findG(frontM,'골반 수평'))],['체중쏠림',findG(frontM,'몸 중심선')]
+    ].filter(c=>c[1]>=1).sort((a,b)=>b[1]-a[1]);
+    if(!cand.length) return {tag:'균형 잡힌 자세',emoji:'🌿',desc:'전반적으로 균형 잡힌 좋은 자세예요.'};
+    if(cand.length===1){ const [tag,emoji,desc]=TYPES[cand[0][0]]; return {tag,emoji,desc}; }
+    return {tag:'복합형',emoji:'🧩',desc:'여러 부위에서 함께 신경 쓰면 좋을 지점들이 보여요. 아래 처방을 꾸준히 실천해봐요.'};
+  }
+  function buildNarrative(frontM,sideM,type){
+    const bad=[...frontM,...sideM].filter(x=>x.g>0).sort((a,b)=>b.g-a.g);
+    if(!bad.length) return '측정된 지표가 모두 양호한 범위예요. 지금처럼 바른 자세를 잘 유지하고 있어요! 앞으로도 스트레칭과 운동으로 지금의 좋은 자세를 꾸준히 지켜가요.';
+    const top=bad.slice(0,2).map(x=>x.nm.replace(/\s*\(.*?\)/,'')).join('와 ');
+    let s='이번 측정에서는 '+top+' 부분을 가장 신경 쓰면 좋겠어요. ';
+    if(type.tag!=='복합형'&&type.tag!=='균형 잡힌 자세') s+=type.tag+' 경향이 보이는데, ';
+    s+='평소 자세 습관과 관련이 깊은 경우가 많으니 아래 추천 운동을 하루 5분씩만 꾸준히 실천해도 눈에 띄게 좋아질 수 있어요. 자세는 며칠 만에 완성되지 않지만, 매일 조금씩 신경 쓰면 반드시 달라져요!';
+    return s;
+  }
+  // 측정 이력(최대 10회, 이 기기 안에만 저장) — 지난 측정 대비 변화 확인용
+  function loadHistory(){ try{ return JSON.parse(localStorage.getItem('mc_posture_hist')||'[]'); }catch(e){ return []; } }
+  function saveHistory(entry){ try{
+    const h=loadHistory(); h.push(entry); while(h.length>10) h.shift();
+    localStorage.setItem('mc_posture_hist',JSON.stringify(h));
+  }catch(e){} }
+  function trendText(prev,entry){
+    if(!prev) return '';
+    const ds=entry.score-prev.score;
+    const parts=[(ds>0?'+':'')+ds+'점'];
+    const dn=prev.neck-entry.neck, db=prev.back-entry.back;
+    if(Math.abs(dn)>=0.5) parts.push('거북목 '+(dn>0?'-':'+')+Math.abs(dn).toFixed(1)+'°');
+    if(Math.abs(db)>=0.5) parts.push('굽은등 '+(db>0?'-':'+')+Math.abs(db).toFixed(1)+'°');
+    return '지난 측정('+new Date(prev.ts).toLocaleDateString('ko-KR',{month:'numeric',day:'numeric'})+') 대비 '+parts.join(' · ');
+  }
   function loadImg(src){ return new Promise((res,rej)=>{ const im=new Image(); im.onload=()=>res(im); im.onerror=rej; im.src=src; }); }
   function rr(g,x,y,w,h,r){ g.beginPath(); if(g.roundRect) g.roundRect(x,y,w,h,r); else g.rect(x,y,w,h); g.fill(); }
   function wrapTxt(g,txt,x,y,maxW,lh){
@@ -1019,80 +1110,94 @@ ACT.posture=(()=>{
     if(line){ g.fillText(line,x,y); y+=lh; }
     return y;
   }
-  // 리포트 전체를 세로 이미지(1080px)로 렌더링 — 갤러리 저장/공유용
+  // 리포트를 컴팩트한 세로 카드 이미지(1080px)로 렌더링 — 갤러리 저장/공유용. 상세 설명은 앱 화면에서만, 이미지는 요약 카드로.
+  function shortNm(nm){ return nm.replace(/\s*\(.*?\)/,''); }
   async function buildImage(){
-    const W=1080,P=56,HMAX=6200;
+    const W=1080,P=56,HMAX=3600;
     const c=document.createElement('canvas'); c.width=W; c.height=HMAX;
     const g=c.getContext('2d');
     g.fillStyle='#050b18'; g.fillRect(0,0,W,HMAX);
-    let y=100;
+    let y=88;
     g.textAlign='center';
-    g.fillStyle='#7fefff'; g.font='900 54px Pretendard'; g.fillText('AI 자세 분석 리포트',W/2,y); y+=46;
-    g.fillStyle='#5f7ea0'; g.font='500 26px Pretendard';
-    g.fillText(new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric'})+' · AI 카메라 측정',W/2,y); y+=80;
-    const col=G.band[2], cy=y+105;
-    g.beginPath(); g.arc(W/2,cy,100,0,Math.PI*2); g.strokeStyle='rgba(148,163,184,.15)'; g.lineWidth=20; g.stroke();
-    g.beginPath(); g.arc(W/2,cy,100,-Math.PI/2,-Math.PI/2+Math.PI*2*G.score/100);
+    g.fillStyle='#7fefff'; g.font='900 48px Pretendard'; g.fillText('AI 자세 분석 리포트',W/2,y); y+=38;
+    g.fillStyle='#5f7ea0'; g.font='500 22px Pretendard';
+    g.fillText(new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric'})+' · AI 카메라 측정',W/2,y); y+=64;
+    // 점수 링 + 유형 배지 (좌우 배치로 세로 절약)
+    const col=G.band[2], cx=W/2-230, cy=y+78;
+    g.beginPath(); g.arc(cx,cy,76,0,Math.PI*2); g.strokeStyle='rgba(148,163,184,.15)'; g.lineWidth=15; g.stroke();
+    g.beginPath(); g.arc(cx,cy,76,-Math.PI/2,-Math.PI/2+Math.PI*2*G.score/100);
     g.strokeStyle=col; g.lineCap='round'; g.stroke();
-    g.fillStyle='#fff'; g.font='900 76px Pretendard'; g.fillText(G.score,W/2,cy+22);
-    g.fillStyle='#93a9c8'; g.font='700 24px Pretendard'; g.fillText('자세 점수',W/2,cy+58);
-    y=cy+155;
-    g.fillStyle=col; g.font='800 32px Pretendard'; g.fillText(G.band[0]+' · '+G.band[1],W/2,y); y+=40;
-    g.fillStyle='#5f7ea0'; g.font='500 23px Pretendard';
-    g.fillText('측정 신뢰도 '+G.rel+'% · 지표 '+(G.frontM.length+G.sideM.length)+'개 분석 · 📐 '+(G.tiltNote||''),W/2,y); y+=56;
+    g.fillStyle='#fff'; g.font='900 54px Pretendard'; g.fillText(G.score,cx,cy+18);
+    g.fillStyle='#93a9c8'; g.font='700 19px Pretendard'; g.fillText('자세 점수',cx,cy+46);
+    g.textAlign='left';
+    const tx=cx+118;
+    g.fillStyle=col; g.font='800 27px Pretendard'; g.fillText(G.band[0]+' · '+G.band[1],tx,cy-40);
+    g.font='900 25px Pretendard'; g.fillStyle='#5eead4'; g.fillText(G.type.emoji+' '+G.type.tag,tx,cy);
+    g.fillStyle='#5f7ea0'; g.font='500 19px Pretendard';
+    g.fillText('신뢰도 '+G.rel+'% · 지표 '+(G.frontM.length+G.sideM.length)+'개 · 📐'+(G.tiltNote||'').replace('기기 수평 확인됨 ','').replace('수평 센서 미지원 기기','센서없음'),tx,cy+36);
+    y=cy+114;
+    // 종합 소견 박스
+    g.fillStyle='rgba(255,255,255,.05)'; rr(g,P,y,W-P*2,150,18);
+    g.fillStyle='#7fefff'; g.font='800 23px Pretendard'; g.fillText('📝 종합 소견',P+22,y+38);
+    g.fillStyle='#c8dcf0'; g.font='500 21px Pretendard';
+    wrapTxt(g,G.narrative,P+22,y+72,W-P*2-44,29);
+    y+=170;
+    // 측정 사진 2장(정면·측면)
     try{
       const [f,s]=await Promise.all([loadImg(G.snapF),loadImg(G.snapS)]);
-      const iw=(W-P*2-24)/2, ih=Math.round(iw*16/9);
+      const iw=(W-P*2-24)/2, ih=Math.round(iw*0.85);
       g.drawImage(f,P,y,iw,ih); g.drawImage(s,P+iw+24,y,iw,ih);
-      g.fillStyle='#7dd3fc'; g.font='700 24px Pretendard';
-      g.fillText('정면 측정',P+iw/2,y+ih+36); g.fillText('측면 측정',P+iw+24+iw/2,y+ih+36);
-      y+=ih+76;
-    }catch(e){ y+=10; }
+      g.textAlign='center'; g.fillStyle='#7dd3fc'; g.font='700 21px Pretendard';
+      g.fillText('정면 측정',P+iw/2,y+ih+30); g.fillText('측면 측정',P+iw+24+iw/2,y+ih+30);
+      g.textAlign='left';
+      y+=ih+58;
+    }catch(e){ y+=6; }
+    // 12지표 컴팩트 그리드(2열) — 설명문 없이 값+등급만, 상세는 앱 화면 참고
     const gcol=['#a3e635','#fbbf24','#fb7185'];
-    const section=(title,list)=>{
-      g.textAlign='left'; g.fillStyle='#5f7ea0'; g.font='800 26px Pretendard'; g.fillText(title,P,y+8); y+=28;
-      list.forEach(x=>{
-        const ch=124, gc=gcol[x.g];
-        g.fillStyle='rgba(255,255,255,.05)'; rr(g,P,y,W-P*2,ch,18);
-        g.font='34px sans-serif'; g.fillStyle='#fff'; g.fillText(x.ic,P+24,y+50);
-        g.font='800 29px Pretendard'; g.fillStyle='#e8faff'; g.fillText(x.nm,P+80,y+50);
-        g.fillStyle=hexA(gc,0.16); rr(g,W-P-156,y+18,136,44,22);
-        g.fillStyle=gc; g.font='800 23px Pretendard'; g.textAlign='center'; g.fillText(GTXT[x.g],W-P-88,y+48);
-        g.textAlign='right';
-        const vs=(x.fmt?x.fmt(x.val):x.val.toFixed(1))+(x.unit||'');
-        g.fillStyle='#fff'; g.font='900 28px Pretendard'; g.fillText(vs,W-P-180,y+50);
-        g.textAlign='left';
-        const pct=Math.max(0.04,Math.min(1,(x.gauge!=null?x.gauge:(x.val/x.max))));
-        g.fillStyle='rgba(148,163,184,.18)'; rr(g,P+24,y+72,W-P*2-48,10,5);
-        g.fillStyle=gc; rr(g,P+24,y+72,(W-P*2-48)*pct,10,5);
-        g.fillStyle='#93a9c8'; g.font='500 22px Pretendard';
-        g.fillText(x.d.length>44?x.d.slice(0,44)+'…':x.d,P+24,y+108);
-        y+=ch+16;
-      });
-      y+=24;
-    };
-    section('정면 분석',G.frontM);
-    section('측면 분석',G.sideM);
-    g.textAlign='left'; g.fillStyle='#5f7ea0'; g.font='800 26px Pretendard'; g.fillText('맞춤 운동 처방',P,y+8); y+=28;
-    (G.rxKeys||[]).forEach(k=>{
-      const r=RX[k]; if(!r) return;
-      const ch=150;
-      g.fillStyle='rgba(34,211,238,.07)'; rr(g,P,y,W-P*2,ch,18);
-      g.font='32px sans-serif'; g.fillStyle='#fff'; g.fillText(r.ic,P+24,y+48);
-      g.font='800 28px Pretendard'; g.fillStyle='#e8faff'; g.fillText(r.nm,P+76,y+48);
-      g.fillStyle='#a3e635'; g.font='800 23px Pretendard'; g.textAlign='right'; g.fillText(r.dose,W-P-24,y+48); g.textAlign='left';
-      g.fillStyle='#9fb6d8'; g.font='500 23px Pretendard';
-      wrapTxt(g,r.how,P+24,y+90,W-P*2-48,32);
-      y+=ch+14;
+    const all=[...G.frontM,...G.sideM];
+    g.fillStyle='#5f7ea0'; g.font='800 24px Pretendard'; g.fillText('지표 스크리닝 ('+all.length+'개)',P,y+6); y+=32;
+    const gap=14, tw=(W-P*2-gap)/2, th=104;
+    all.forEach((x,i)=>{
+      const col2=i%2, row=Math.floor(i/2);
+      const tx2=P+col2*(tw+gap), ty=y+row*(th+gap), gc=gcol[x.g];
+      g.fillStyle='rgba(255,255,255,.05)'; rr(g,tx2,ty,tw,th,16);
+      g.font='26px sans-serif'; g.fillStyle='#fff'; g.fillText(x.ic,tx2+16,ty+36);
+      g.font='800 21px Pretendard'; g.fillStyle='#e8faff';
+      const nm=shortNm(x.nm); g.fillText(nm.length>9?nm.slice(0,9)+'…':nm,tx2+50,ty+32);
+      const vs=(x.fmt?x.fmt(x.val):x.val.toFixed(1))+(x.unit||'');
+      g.font='900 24px Pretendard'; g.fillStyle='#fff'; g.fillText(vs,tx2+50,ty+62);
+      g.fillStyle=hexA(gc,0.18); rr(g,tx2+tw-104,ty+14,88,32,16);
+      g.fillStyle=gc; g.font='800 17px Pretendard'; g.textAlign='center'; g.fillText(GTXT[x.g],tx2+tw-60,ty+35); g.textAlign='left';
+      const pct=Math.max(0.04,Math.min(1,(x.gauge!=null?x.gauge:(x.val/x.max))));
+      g.fillStyle='rgba(148,163,184,.18)'; rr(g,tx2+16,ty+82,tw-32,7,4);
+      g.fillStyle=gc; rr(g,tx2+16,ty+82,(tw-32)*pct,7,4);
     });
-    y+=24;
-    g.fillStyle='#8093ad'; g.font='500 21px Pretendard';
-    y=wrapTxt(g,'⚠️ 이 결과는 카메라 기반 참고용 자세 스크리닝이며 의학적 진단이 아닙니다. 통증이 있거나 수치가 계속 크게 나오면 보건 선생님 또는 병원과 상담하세요.',P,y+16,W-P*2,30);
-    y+=44;
-    g.textAlign='center'; g.fillStyle='#3f5876'; g.font='700 22px Pretendard';
-    g.fillText('AI 모션 트레이닝 센터 · 영상은 기기 안에서만 처리됩니다',W/2,y); y+=34;
-    const out=document.createElement('canvas'); out.width=W; out.height=Math.min(HMAX,y+20);
-    out.getContext('2d').drawImage(c,0,0);
+    y+=Math.ceil(all.length/2)*(th+gap)+18;
+    // 맞춤 운동 처방 (컴팩트, 최대 3개)
+    g.fillStyle='#5f7ea0'; g.font='800 24px Pretendard'; g.fillText('맞춤 운동 처방',P,y+6); y+=32;
+    (G.rxKeys||[]).slice(0,3).forEach(k=>{
+      const r=RX[k]; if(!r) return;
+      const ch=88;
+      g.fillStyle='rgba(34,211,238,.07)'; rr(g,P,y,W-P*2,ch,16);
+      g.font='28px sans-serif'; g.fillStyle='#fff'; g.fillText(r.ic,P+18,y+48);
+      g.font='800 24px Pretendard'; g.fillStyle='#e8faff'; g.fillText(r.nm,P+64,y+38);
+      g.fillStyle='#a3e635'; g.font='700 20px Pretendard'; g.fillText('📌 '+r.dose,P+64,y+66);
+      y+=ch+12;
+    });
+    y+=18;
+    if(G.trendNote){
+      g.fillStyle='rgba(45,212,191,.08)'; rr(g,P,y,W-P*2,66,16);
+      g.fillStyle='#5eead4'; g.font='700 20px Pretendard'; g.fillText('📈 '+G.trendNote,P+20,y+40);
+      y+=86;
+    }
+    g.fillStyle='#8093ad'; g.font='500 19px Pretendard';
+    y=wrapTxt(g,'⚠️ 참고용 자세 스크리닝이며 의학적 진단이 아닙니다. 통증이 있거나 수치가 계속 크게 나오면 보건 선생님 또는 병원과 상담하세요.',P,y+20,W-P*2,27);
+    y+=36;
+    g.textAlign='center'; g.fillStyle='#3f5876'; g.font='700 20px Pretendard';
+    g.fillText('AI 모션 트레이닝 센터 · 영상은 기기 안에서만 처리됩니다',W/2,y); y+=30;
+    const finalH=Math.min(HMAX,y+24);
+    const out=document.createElement('canvas'); out.width=W; out.height=finalH;
+    out.getContext('2d').drawImage(c,0,0,W,finalH,0,0,W,finalH);
     return out;
   }
   async function saveReportImage(){
@@ -1101,6 +1206,7 @@ ACT.posture=(()=>{
     try{
       const cv=await buildImage();
       const blob=await new Promise(res=>cv.toBlob(res,'image/png'));
+      if(!blob) throw new Error('canvas toBlob returned null');
       const name='자세분석리포트_'+new Date().toISOString().slice(0,10)+'.png';
       const file=new File([blob],name,{type:'image/png'});
       // 모바일: 공유 시트로 갤러리(사진) 저장 / PC: 파일 다운로드
@@ -1111,11 +1217,15 @@ ACT.posture=(()=>{
         a.href=URL.createObjectURL(blob); a.download=name;
         document.body.appendChild(a); a.click();
         setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },800);
+        toast('📥 이미지를 다운로드했어요');
       }
-    }catch(e){}
+    }catch(e){
+      if(!(e&&e.name==='AbortError')) toast('이미지 저장에 실패했어요. 다시 시도해 주세요.');
+    }
     if(btn){ btn.disabled=false; btn.textContent='📸 이미지 저장'; }
   }
   function buildReport(){
+    G.step='done';
     const all=[...G.frontM,...G.sideM];
     const worst=Math.max(...all.map(x=>x.g));
     const cnt=[0,0,0]; all.forEach(x=>cnt[x.g]++);
@@ -1126,11 +1236,34 @@ ACT.posture=(()=>{
     G.band=G.score>=90?['A','훌륭해요!','#a3e635']:G.score>=80?['B','좋아요, 조금만 다듬어요','#22d3ee']:G.score>=70?['C','몇 가지 관리가 필요해요','#fbbf24']:['D','꾸준한 관리가 필요해요','#fb7185'];
     const tiltUsed=G.rolls&&G.rolls.length>0;
     G.tiltNote=tiltUsed?('기기 수평 확인됨 (평균 '+(G.rolls.reduce((x,y)=>x+y,0)/G.rolls.length).toFixed(1)+'°)'):'수평 센서 미지원 기기';
+    G.type=classifyType(G.frontM,G.sideM);
+    G.narrative=buildNarrative(G.frontM,G.sideM,G.type);
+    G.faceCheck=frontFacingCheck(G.frontA);
+    const prevEntry=(()=>{ const h=loadHistory(); return h.length?h[h.length-1]:null; })();
+    const entry={ts:Date.now(),score:G.score,
+      neck:findVal(G.sideM,'거북목'),back:findVal(G.sideM,'상체 기울기'),
+      shoulder:findVal(G.frontM,'어깨 수평'),pelvis:findVal(G.frontM,'골반 수평')};
+    saveHistory(entry);
+    G.hist=loadHistory(); G.trendNote=trendText(prevEntry,entry);
     const gcol=['#a3e635','#fbbf24','#fb7185'];
     let h='<h2>자세 분석 리포트</h2><div class="rp-date">'+new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric'})+' · AI 카메라 측정</div>';
     h+='<div class="score-wrap"><div class="score-ring" style="--p:'+G.score+';--c:'+G.band[2]+'"><span>'+G.score+'</span></div>'
       +'<div class="score-side"><div class="sc-band" style="color:'+G.band[2]+'">'+G.band[0]+' · '+G.band[1]+'</div>'
       +'<div class="sc-rel">측정 신뢰도 '+G.rel+'%<br>지표 '+all.length+'개 정밀 분석<br>📐 '+G.tiltNote+'</div></div></div>';
+    h+='<div style="text-align:center"><span class="type-badge">'+G.type.emoji+' 자세 유형 · '+G.type.tag+'</span></div>';
+    h+='<div class="quality-row"><span class="q-chip">📐 '+G.tiltNote+'</span>'
+      +(G.faceCheck?'<span class="q-chip">'+(G.faceCheck.ok?'👀 정면 응시 확인됨':'👀 고개가 살짝 돌아간 상태로 측정(참고)')+'</span>':'')
+      +'<span class="q-chip">🔍 지표 '+all.length+'개 정밀 분석</span></div>';
+    h+='<div class="narrative">📝 <b>종합 소견</b><br>'+G.narrative+'</div>';
+    if(G.hist.length>1){
+      const scores=G.hist.map(x=>x.score);
+      const mx=Math.max(...scores,1);
+      h+='<div class="trend-wrap"><div class="trend-bars">'+scores.map((s,i)=>{
+        const on=i===scores.length-1;
+        return '<i style="height:'+Math.max(6,Math.round(s/mx*44))+'px;background:'+(on?'linear-gradient(180deg,#a3e635,#3f9142)':'linear-gradient(180deg,#2dd4bf,#0891b2)')+'"></i>';
+      }).join('')+'</div><div class="trend-txt">📈 <b>측정 이력</b> (이 기기 기준 최근 '+scores.length+'회)'
+        +(G.trendNote?'<br>'+G.trendNote:'<br>꾸준히 측정하면 변화를 비교해 볼 수 있어요.')+'</div></div>';
+    }
     h+='<div class="rp-snaps"><figure><img src="'+G.snapF+'" alt="정면"><figcaption>정면 측정</figcaption></figure>';
     h+='<figure><img src="'+G.snapS+'" alt="측면"><figcaption>측면 측정</figcaption></figure></div>';
     h+='<div class="rp-summary"><span class="sm-chip g'+worst+'">종합: '+(worst===0?'🟢 아주 좋아요!':worst===1?'🟡 몇 가지만 신경 써요':'🔴 꾸준한 관리가 필요해요')+'</span>';
@@ -1232,6 +1365,7 @@ ACT.posture=(()=>{
       G.frontM=null; G.sideM=null; G.snapF=null; G.snapS=null; G.rel=97; G.procUntil=0;
       $('timerUnit').textContent='SCAN'; $('timerVal').textContent='0%'; },
     frame(lms){
+      if(G.step==='done') return;   // 리포트 생성 후 안전장치(중복 저장/재계산 방지)
       const now=performance.now();
       // 분석 프로세싱 연출 단계 (스캔 완료 후)
       if(G.step==='frontProc'||G.step==='sideProc'){
@@ -1287,7 +1421,7 @@ ACT.posture=(()=>{
       }
       G.lastMid=mid;
       if(!G.stableAt) G.stableAt=now;
-      G.buf.push(IDX.reduce((o,i)=>(o[i]={x:lms[i].x,y:lms[i].y,visibility:visOf(lms[i])},o),{}));
+      G.buf.push(IDX.reduce((o,i)=>(o[i]={x:lms[i].x,y:lms[i].y,z:(lms[i].z||0),visibility:visOf(lms[i])},o),{}));
       if(G.buf.length>140) G.buf.shift();
       const held=(now-G.stableAt)/1000;
       const pct=Math.min(100,Math.round(held/HOLD*100));
@@ -1297,12 +1431,12 @@ ACT.posture=(()=>{
       if(held>=HOLD&&G.buf.length>=20){
         const a=avgFrames(G.buf.slice(-60));
         if(want==='front'){
-          G.frontM=computeFront(a); G.snapF=snapshot(a,'front');
+          G.frontM=computeFront(a); G.snapF=snapshot(a,'front'); G.frontA=a;
           G.step='frontProc'; G.procUntil=now+1700;
           beep(880,0.2); buzz([0,60,50,60]);
           setState('정면 스캔 완료! 데이터 분석 중…','#2dd4bf');
         }else{
-          G.sideM=computeSide(a); G.snapS=snapshot(a,'side');
+          G.sideM=computeSide(a); G.snapS=snapshot(a,'side'); G.sideA=a;
           const avgMv=G.mvs.length?G.mvs.reduce((x,y)=>x+y,0)/G.mvs.length:0;
           G.rel=Math.max(86,Math.min(99,Math.round(99-avgMv*2.2)));
           G.step='sideProc'; G.procUntil=now+2300;
