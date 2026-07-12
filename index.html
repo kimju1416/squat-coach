@@ -311,6 +311,36 @@ function buzz(p){ if(navigator.vibrate){ try{navigator.vibrate(p);}catch(e){} } 
 async function keepAwake(){ try{ if('wakeLock' in navigator) wakeLock=await navigator.wakeLock.request('screen'); }catch(e){} }
 function releaseWake(){ try{ if(wakeLock){ wakeLock.release(); wakeLock=null; } }catch(e){} }
 
+/* ---------- 기기 수평 센서(중력 벡터) — 자세분석 정확도 보장 ---------- */
+const tilt={roll:null,pitch:null,ts:0,listening:false};
+function onMotion(e){
+  const g=e.accelerationIncludingGravity;
+  if(!g||g.x==null) return;
+  // 포트레이트 기준: roll=좌우 기울기(가로 측정 왜곡의 주범), pitch=앞뒤 기울기
+  let roll=Math.atan2(g.x,g.y)*180/Math.PI;
+  // iOS 부호 반전·가로모드 등 어떤 방향이든 가장 가까운 바른 방향 기준으로 접기
+  while(roll>45) roll-=90; while(roll<-45) roll+=90;
+  const pitch=Math.atan2(g.z,Math.hypot(g.x,g.y))*180/Math.PI;
+  tilt.roll=(tilt.roll==null)?roll:tilt.roll*0.8+roll*0.2;
+  tilt.pitch=(tilt.pitch==null)?pitch:tilt.pitch*0.8+pitch*0.2;
+  tilt.ts=performance.now();
+}
+async function initTilt(){
+  if(tilt.listening) return;
+  try{
+    if(typeof DeviceMotionEvent!=='undefined'&&DeviceMotionEvent.requestPermission){
+      const p=await DeviceMotionEvent.requestPermission();   // iOS: 사용자 제스처 내에서만
+      if(p!=='granted') return;
+    }
+  }catch(e){}
+  try{ window.addEventListener('devicemotion',onMotion); tilt.listening=true; }catch(e){}
+}
+function tiltNow(){
+  if(DEBUG&&window.__fakeTilt) return {ok:true,roll:window.__fakeTilt.roll||0,pitch:window.__fakeTilt.pitch||0};
+  if(tilt.roll==null||performance.now()-tilt.ts>2000) return {ok:false,roll:0,pitch:0};
+  return {ok:true,roll:tilt.roll,pitch:tilt.pitch};
+}
+
 /* ---------- 엔진 로딩·카메라 ---------- */
 async function loadModels(){
   if(pose||DEBUG) return;
@@ -1009,7 +1039,7 @@ ACT.posture=(()=>{
     y=cy+155;
     g.fillStyle=col; g.font='800 32px Pretendard'; g.fillText(G.band[0]+' · '+G.band[1],W/2,y); y+=40;
     g.fillStyle='#5f7ea0'; g.font='500 23px Pretendard';
-    g.fillText('측정 신뢰도 '+G.rel+'% · 지표 '+(G.frontM.length+G.sideM.length)+'개 분석',W/2,y); y+=56;
+    g.fillText('측정 신뢰도 '+G.rel+'% · 지표 '+(G.frontM.length+G.sideM.length)+'개 분석 · 📐 '+(G.tiltNote||''),W/2,y); y+=56;
     try{
       const [f,s]=await Promise.all([loadImg(G.snapF),loadImg(G.snapS)]);
       const iw=(W-P*2-24)/2, ih=Math.round(iw*16/9);
@@ -1094,11 +1124,13 @@ ACT.posture=(()=>{
     G.rxKeys=rxKeys;
     G.score=calcScore(all);
     G.band=G.score>=90?['A','훌륭해요!','#a3e635']:G.score>=80?['B','좋아요, 조금만 다듬어요','#22d3ee']:G.score>=70?['C','몇 가지 관리가 필요해요','#fbbf24']:['D','꾸준한 관리가 필요해요','#fb7185'];
+    const tiltUsed=G.rolls&&G.rolls.length>0;
+    G.tiltNote=tiltUsed?('기기 수평 확인됨 (평균 '+(G.rolls.reduce((x,y)=>x+y,0)/G.rolls.length).toFixed(1)+'°)'):'수평 센서 미지원 기기';
     const gcol=['#a3e635','#fbbf24','#fb7185'];
     let h='<h2>자세 분석 리포트</h2><div class="rp-date">'+new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric'})+' · AI 카메라 측정</div>';
     h+='<div class="score-wrap"><div class="score-ring" style="--p:'+G.score+';--c:'+G.band[2]+'"><span>'+G.score+'</span></div>'
       +'<div class="score-side"><div class="sc-band" style="color:'+G.band[2]+'">'+G.band[0]+' · '+G.band[1]+'</div>'
-      +'<div class="sc-rel">측정 신뢰도 '+G.rel+'%<br>지표 '+all.length+'개 정밀 분석</div></div></div>';
+      +'<div class="sc-rel">측정 신뢰도 '+G.rel+'%<br>지표 '+all.length+'개 정밀 분석<br>📐 '+G.tiltNote+'</div></div></div>';
     h+='<div class="rp-snaps"><figure><img src="'+G.snapF+'" alt="정면"><figcaption>정면 측정</figcaption></figure>';
     h+='<figure><img src="'+G.snapS+'" alt="측면"><figcaption>측면 측정</figcaption></figure></div>';
     h+='<div class="rp-summary"><span class="sm-chip g'+worst+'">종합: '+(worst===0?'🟢 아주 좋아요!':worst===1?'🟡 몇 가지만 신경 써요':'🔴 꾸준한 관리가 필요해요')+'</span>';
@@ -1124,7 +1156,8 @@ ACT.posture=(()=>{
       h+='<div class="rx-card"><div class="rt"><span>'+r.ic+'</span>'+r.nm+'</div><div class="rh">'+r.how+'</div><div class="rd">📌 '+r.dose+'</div>'
         +(r.go?'<button class="rx-go" data-go="'+r.go+'">▶ 지금 바로 하기</button>':'')+'</div>';
     });
-    h+='<div class="rp-warn">⚠️ 이 결과는 카메라 기반 <b>참고용 자세 스크리닝</b>이며 의학적 진단이 아니에요. 옷 모양·서 있는 위치에 따라 수치가 달라질 수 있어요. 통증이 있거나 수치가 계속 크게 나오면 보건 선생님 또는 병원과 상담하세요.</div>';
+    h+='<div class="rp-warn">⚠️ 이 결과는 카메라 기반 <b>참고용 자세 스크리닝</b>이며 의학적 진단이 아니에요. 옷 모양·서 있는 위치에 따라 수치가 달라질 수 있어요. 통증이 있거나 수치가 계속 크게 나오면 보건 선생님 또는 병원과 상담하세요.'
+      +(tiltUsed?'':'<br>📐 이 기기는 수평 센서를 지원하지 않아 폰 기울기 확인 없이 측정됐어요. 폰을 벽에 기대 최대한 수직·수평으로 세우고 측정하면 더 정확해요.')+'</div>';
     h+='<div class="rp-btns"><button class="ghost" id="rpMenu">메뉴로</button><button class="ghost" id="rpSave">📸 이미지 저장</button><button class="cta" id="rpAgain">다시 측정</button></div>';
     $('reportBody').innerHTML=h;
     $('rpSave').onclick=saveReportImage;
@@ -1133,6 +1166,28 @@ ACT.posture=(()=>{
     document.querySelectorAll('.rx-go').forEach(b=>b.onclick=()=>{ $('reportScr').classList.remove('show'); openIntro(b.dataset.go); });
     hideAll(); running=false; current=null; setHud(false);
     $('reportScr').classList.add('show'); $('reportScr').scrollTop=0;
+  }
+  // 기기 수평계(버블 레벨): 센서 있으면 표시하고 수평 여부 반환 (true/false), 센서 없으면 null
+  function drawLevel(){
+    const t=tiltNow();
+    if(!t.ok) return null;
+    const w=Math.min(map.W*0.62,290), y=Math.max(72,map.H*0.105);
+    const rollAbs=Math.abs(t.roll), pitchBad=Math.abs(t.pitch)>15;
+    const level=rollAbs<=3&&!pitchBad;
+    const col=level?'#a3e635':(rollAbs<=6&&!pitchBad?'#fbbf24':'#fb7185');
+    ctx.save();
+    ctx.strokeStyle='rgba(148,163,184,.55)'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(map.W/2-w/2,y); ctx.lineTo(map.W/2+w/2,y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(map.W/2,y-9); ctx.lineTo(map.W/2,y+9); ctx.stroke();
+    // 버블: 기울수록 중앙에서 멀어짐
+    const bx=map.W/2+Math.max(-1,Math.min(1,t.roll/10))*(w/2-12);
+    ctx.shadowBlur=12; ctx.shadowColor=col; ctx.fillStyle=col;
+    ctx.beginPath(); ctx.arc(bx,y,9,0,Math.PI*2); ctx.fill();
+    ctx.shadowBlur=0;
+    ctx.font='700 '+Math.max(12,map.W/30)+'px Pretendard'; ctx.textAlign='center'; ctx.fillStyle=col;
+    ctx.fillText(pitchBad?'폰을 더 세워 주세요':(level?'수평 OK · '+rollAbs.toFixed(1)+'°':'기울어짐 '+rollAbs.toFixed(1)+'°'),map.W/2,y+30);
+    ctx.restore();
+    return level;
   }
   // 스캔 연출: 바디 브래킷 + 왕복 스캔라인 + 실시간 각도 리드아웃 + 진행바
   function drawScan(lms,pct,label){
@@ -1172,8 +1227,8 @@ ACT.posture=(()=>{
   }
   return {
     key:'posture', hud:{timer:true},
-    intro:{emoji:'🧍',title:'AI 자세 분석',desc:'<b>① 정면 4초</b> + <b>② 측면 4초</b> 정밀 스캔으로<br><b>12가지 지표</b>를 분석해 <b>자세 점수</b>와 맞춤 운동을 처방해요.<br>발끝까지 전신이 보이게 서 주세요.'},
-    start(){ G.step='front'; G.buf=[]; G.stableAt=null; G.lastMid=null; G.mvs=[];
+    intro:{emoji:'🧍',title:'AI 자세 분석',desc:'<b>① 정면 4초</b> + <b>② 측면 4초</b> 정밀 스캔으로<br><b>12가지 지표</b>를 분석해 <b>자세 점수</b>와 맞춤 운동을 처방해요.<br>폰을 벽에 기대 세워 두면 <b>수평계</b>가 기울기를 확인해줘요.<br>발끝까지 전신이 보이게 서 주세요.'},
+    start(){ G.step='front'; G.buf=[]; G.stableAt=null; G.lastMid=null; G.mvs=[]; G.rolls=[];
       G.frontM=null; G.sideM=null; G.snapF=null; G.snapS=null; G.rel=97; G.procUntil=0;
       $('timerUnit').textContent='SCAN'; $('timerVal').textContent='0%'; },
     frame(lms){
@@ -1214,6 +1269,15 @@ ACT.posture=(()=>{
         setState(want==='front'?'카메라를 정면으로 바라보고 바르게 서요':'옆으로 돌아 옆모습이 보이게 서요 (한쪽 어깨가 카메라 쪽)', '#22d3ee');
         return;
       }
+      // 기기 수평 게이트: 폰이 기울면 어깨/골반 수평 측정이 왜곡되므로 스캔 정지
+      const lv=drawLevel();
+      if(lv===false){
+        G.stableAt=null; G.buf=[];
+        setState('📐 폰을 수평으로 세워 주세요 — 수평계를 초록불로!','#fbbf24');
+        $('timerVal').textContent='0%';
+        return;
+      }
+      if(lv===true){ const tn=tiltNow(); G.rolls.push(Math.abs(tn.roll)); if(G.rolls.length>400) G.rolls.shift(); }
       // 안정(정지) 감지: 골반 중점 이동량 (신뢰도 계산에도 사용)
       const mid={x:(lms[23].x+lms[24].x)/2, y:(lms[23].y+lms[24].y)/2};
       if(G.lastMid){
@@ -1271,6 +1335,7 @@ async function startActivity(){
   const btn=$('introStart');
   btn.disabled=true; btn.textContent='준비 중…';
   initAudio();
+  if(curKey==='posture') initTilt();   // iOS 센서 권한은 사용자 제스처 내에서 요청
   try{
     await loadModels();
     $('loadMsg').textContent='카메라를 켜는 중…';
