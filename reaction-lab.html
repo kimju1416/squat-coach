@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>리액션 랩 ⚡ 반응속도 훈련소</title>
+<meta property="og:title" content="리액션 랩 ⚡ 반응속도 훈련소">
+<meta property="og:description" content="6가지 반응속도 게임으로 훈련하자! 체육 수업용 반응속도 측정 앱">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+:root{
+  --bg:#0B1020; --card:#161E36; --card2:#1D2745; --line:rgba(255,255,255,.08);
+  --txt:#F2F5FF; --sub:#8A94B8; --dim:#5A6488;
+  --c1:#8B7CF6; --c2:#34D399; --c3:#FBBF24; --c4:#60A5FA; --c5:#F87171; --c6:#F472B6;
+  --r:18px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{font-family:'Pretendard',-apple-system,sans-serif;background:var(--bg);color:var(--txt);overflow-x:hidden;
+  user-select:none;-webkit-user-select:none;touch-action:manipulation}
+button{font-family:inherit;border:none;cursor:pointer;background:none;color:inherit}
+
+/* ===== 공통 레이아웃 ===== */
+.screen{display:none;min-height:100vh;min-height:100dvh;flex-direction:column}
+.screen.on{display:flex}
+.wrap{width:100%;max-width:520px;margin:0 auto;padding:0 18px;flex:1;display:flex;flex-direction:column}
+.gamehead{display:flex;align-items:center;gap:10px;padding:16px 0 10px}
+.backbtn{width:38px;height:38px;border-radius:12px;background:var(--card);display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--sub);flex-shrink:0}
+.backbtn:active{transform:scale(.93)}
+.gamehead h2{font-size:18px;font-weight:700}
+.gamehead .gh-sub{font-size:12px;color:var(--sub);font-weight:400}
+
+/* ===== 허브 ===== */
+#hub .hero{padding:34px 0 8px;text-align:center}
+.sig-dots{display:flex;gap:10px;justify-content:center;margin-bottom:14px}
+.sig-dots span{width:14px;height:14px;border-radius:50%;background:#2A3458;animation:sigblink 2.4s infinite}
+.sig-dots span:nth-child(1){animation-delay:0s}
+.sig-dots span:nth-child(2){animation-delay:.4s}
+.sig-dots span:nth-child(3){animation-delay:.8s}
+@keyframes sigblink{0%,70%,100%{background:#2A3458}10%,30%{background:#34D399;box-shadow:0 0 14px rgba(52,211,153,.6)}}
+#hub h1{font-size:32px;font-weight:800;letter-spacing:-.5px}
+#hub h1 em{font-style:normal;color:var(--c2)}
+#hub .hero p{color:var(--sub);font-size:14px;margin-top:8px;line-height:1.6}
+.cardgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:22px 0 16px}
+.gcard{background:var(--card);border-radius:var(--r);padding:18px 16px 16px;text-align:left;position:relative;overflow:hidden;border:1px solid var(--line);transition:transform .12s}
+.gcard:active{transform:scale(.96)}
+.gcard::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--gc)}
+.gcard .gicon{font-size:30px;display:block;margin-bottom:10px}
+.gcard .gname{font-size:15.5px;font-weight:700;margin-bottom:4px}
+.gcard .gdesc{font-size:11.5px;color:var(--sub);line-height:1.5;min-height:34px}
+.gcard .gbest{margin-top:10px;font-size:11px;color:var(--dim);display:flex;align-items:center;gap:4px}
+.gcard .gbest b{color:var(--gc);font-weight:700;font-variant-numeric:tabular-nums}
+.hubfoot{text-align:center;font-size:11px;color:var(--dim);padding:6px 0 28px}
+.soundtoggle{display:inline-flex;align-items:center;gap:6px;background:var(--card);border-radius:99px;padding:7px 14px;font-size:12px;color:var(--sub);margin-bottom:14px}
+.soundtoggle.off{opacity:.5}
+.diffseg{display:flex;background:var(--card);border-radius:14px;padding:4px;gap:4px;margin:18px 0 0}
+.diffseg button{flex:1;padding:11px 0;border-radius:10px;font-size:14px;font-weight:700;color:var(--sub);transition:all .15s}
+.diffseg button.sel{color:#0B1020}
+.diffseg button[data-d="easy"].sel{background:var(--c2)}
+.diffseg button[data-d="normal"].sel{background:var(--c3)}
+.diffseg button[data-d="hard"].sel{background:var(--c5)}
+.diffbadge{display:inline-block;font-size:11px;font-weight:700;padding:2px 9px;border-radius:99px;margin-left:7px;vertical-align:2px}
+
+/* ===== 공통 게임 UI ===== */
+.bigbtn{width:100%;padding:17px;border-radius:16px;font-size:17px;font-weight:700;color:#0B1020;transition:transform .1s}
+.bigbtn:active{transform:scale(.97)}
+.ghostbtn{width:100%;padding:14px;border-radius:14px;font-size:14px;font-weight:600;color:var(--sub);background:var(--card);margin-top:10px}
+.statrow{display:flex;gap:10px;margin:14px 0}
+.stat{flex:1;background:var(--card);border-radius:14px;padding:12px 8px;text-align:center}
+.stat .sl{font-size:11px;color:var(--sub);margin-bottom:4px}
+.stat .sv{font-size:19px;font-weight:800;font-variant-numeric:tabular-nums}
+.resultbox{background:var(--card);border-radius:var(--r);padding:26px 20px;text-align:center;margin:14px 0}
+.resultbox .grade{font-size:54px;font-weight:800;line-height:1.1}
+.resultbox .rdesc{color:var(--sub);font-size:13px;margin-top:8px;line-height:1.6}
+.resultbox .rmain{font-size:34px;font-weight:800;font-variant-numeric:tabular-nums;margin:6px 0}
+.newrecord{display:inline-block;background:rgba(251,191,36,.15);color:var(--c3);font-size:12px;font-weight:700;padding:5px 12px;border-radius:99px;margin-top:10px}
+
+/* ===== G1 타이밍 바 ===== */
+#g1 .track{position:relative;height:86px;background:var(--card);border-radius:16px;margin:18px 0;overflow:hidden}
+#g1 .zone-good{position:absolute;top:0;bottom:0;left:35%;width:30%;background:rgba(139,124,246,.14)}
+#g1 .zone-perfect{position:absolute;top:0;bottom:0;left:44%;width:12%;background:rgba(139,124,246,.32);border-left:1px solid rgba(139,124,246,.5);border-right:1px solid rgba(139,124,246,.5)}
+#g1 .bar{position:absolute;top:8px;bottom:8px;width:10px;border-radius:6px;background:var(--c1);box-shadow:0 0 16px rgba(139,124,246,.7);left:0}
+#g1 .judge{height:46px;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;letter-spacing:1px}
+.j-perfect{color:var(--c1)} .j-good{color:var(--c2)} .j-miss{color:var(--c5)}
+#g1 .combo{text-align:center;font-size:13px;color:var(--sub);height:20px}
+#g1 .combo b{color:var(--c3);font-size:16px}
+#g1 .tapbtn{background:var(--c1)}
+
+/* ===== G2 신호등 ===== */
+#g2 .light{flex:1;min-height:300px;border-radius:24px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;margin:16px 0;transition:background .08s;background:var(--card)}
+#g2 .light .licon{font-size:64px;line-height:1}
+#g2 .light .ltxt{font-size:22px;font-weight:800}
+#g2 .light .lsub{font-size:13px;opacity:.75}
+#g2 .light.wait{background:#3B1A24}
+#g2 .light.go{background:#0E3B2C}
+#g2 .light.early{background:#3B2A0E}
+#g2 .rounds{display:flex;gap:8px;justify-content:center;margin-bottom:10px}
+#g2 .rounds span{min-width:54px;text-align:center;background:var(--card);border-radius:10px;padding:7px 6px;font-size:12.5px;font-variant-numeric:tabular-nums;color:var(--sub)}
+#g2 .rounds span.done{color:var(--c2);font-weight:700}
+
+/* ===== G3 새 잡기 ===== */
+#g3 .sky{position:relative;flex:1;min-height:380px;background:linear-gradient(180deg,#101A38 0%,#16224A 100%);border-radius:20px;margin:14px 0;overflow:hidden}
+#g3 .bird{position:absolute;font-size:36px;line-height:1;cursor:pointer;transition:none;will-change:transform;user-select:none}
+#g3 .pop{position:absolute;font-size:20px;font-weight:800;color:var(--c3);animation:popup .5s forwards;pointer-events:none}
+@keyframes popup{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-30px) scale(1.4)}}
+#g3 .skyhud{position:absolute;top:12px;left:14px;right:14px;display:flex;justify-content:space-between;font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;pointer-events:none}
+#g3 .skyhud .h-time{color:var(--c3)}
+#g3 .tapstart{background:var(--c3)}
+
+/* ===== G4 N초 만들기 ===== */
+#g4 .secpick{display:flex;gap:10px;margin:16px 0}
+#g4 .secpick button{flex:1;padding:16px 0;border-radius:14px;background:var(--card);font-size:18px;font-weight:800;color:var(--sub);border:2px solid transparent}
+#g4 .secpick button.sel{border-color:var(--c4);color:var(--c4);background:rgba(96,165,250,.1)}
+#g4 .timerzone{flex:1;min-height:280px;background:var(--card);border-radius:24px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;margin:6px 0 16px}
+#g4 .timerzone .tz-big{font-size:46px;font-weight:800;font-variant-numeric:tabular-nums}
+#g4 .timerzone .tz-sub{font-size:14px;color:var(--sub)}
+#g4 .timerzone.running{background:#11244A}
+#g4 .startbtn{background:var(--c4)}
+
+/* ===== G5 색깔 go/no-go ===== */
+#g5 .arena{flex:1;min-height:340px;background:var(--card);border-radius:24px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;margin:14px 0;position:relative}
+#g5 .target{width:150px;height:150px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:21px;font-weight:800;color:#fff;transform:scale(0);transition:transform .12s}
+#g5 .target.show{transform:scale(1)}
+#g5 .ahud{position:absolute;top:14px;left:16px;right:16px;display:flex;justify-content:space-between;font-size:14px;font-weight:700;font-variant-numeric:tabular-nums}
+#g5 .fb{position:absolute;bottom:16px;font-size:15px;font-weight:800;height:20px}
+#g5 .startbtn{background:var(--c5)}
+
+/* ===== G6 1v1 ===== */
+#g6{padding:0}
+#g6 .duel{display:flex;flex-direction:column;height:100vh;height:100dvh}
+#g6 .pzone{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;font-size:20px;font-weight:800;transition:background .1s}
+#g6 .pzone .psub{font-size:13px;font-weight:500;opacity:.7}
+#g6 .ptop{background:#251536;transform:rotate(180deg)}
+#g6 .pbot{background:#13283C}
+#g6 .pzone.winflash{background:#0E3B2C!important}
+#g6 .pzone.losef{background:#3B1A24!important}
+#g6 .center{height:90px;background:var(--bg);display:flex;align-items:center;justify-content:center;gap:14px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);position:relative}
+#g6 .sigdot{width:46px;height:46px;border-radius:50%;background:#2A3458;transition:all .05s}
+#g6 .sigdot.fire{background:#34D399;box-shadow:0 0 26px rgba(52,211,153,.9)}
+#g6 .pips{display:flex;gap:5px}
+#g6 .pips i{width:10px;height:10px;border-radius:50%;background:#2A3458;font-style:normal}
+#g6 .pips.top i.won{background:var(--c1)}
+#g6 .pips.bot i.won{background:var(--c4)}
+#g6 .exitduel{position:absolute;right:12px;top:50%;transform:translateY(-50%);width:34px;height:34px;border-radius:10px;background:var(--card);color:var(--sub);font-size:15px}
+
+@media(max-width:360px){.cardgrid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- ════════ 허브 ════════ -->
+<div class="screen on" id="hub">
+  <div class="wrap">
+    <div class="hero">
+      <div class="sig-dots"><span></span><span></span><span></span></div>
+      <h1>리액션 <em>랩</em> ⚡</h1>
+      <p>6가지 반응속도 게임으로 훈련하자!<br>최고기록은 자동 저장됩니다</p>
+      <div class="diffseg" id="diffseg">
+        <button data-d="easy" onclick="setDiff('easy')">😊 하</button>
+        <button data-d="normal" onclick="setDiff('normal')">🔥 중</button>
+        <button data-d="hard" onclick="setDiff('hard')">💀 상</button>
+      </div>
+      <p style="font-size:11px;color:var(--dim);margin-top:8px">난이도별로 최고기록이 따로 저장됩니다 · 💀상은 페이크 신호와 함정 등장!</p>
+    </div>
+    <div class="cardgrid">
+      <button class="gcard" style="--gc:var(--c1)" onclick="openGame('g1')">
+        <span class="gicon">🎯</span><span class="gname">타이밍 바</span>
+        <span class="gdesc">움직이는 바를 존 안에서 탭! 콤보를 쌓아 고득점</span>
+        <span class="gbest">🏆 최고 <b id="best-g1">-</b></span>
+      </button>
+      <button class="gcard" style="--gc:var(--c2)" onclick="openGame('g2')">
+        <span class="gicon">🚦</span><span class="gname">신호등 반응</span>
+        <span class="gdesc">초록불 켜지는 순간 탭! 순수 반응속도 측정</span>
+        <span class="gbest">🏆 최고 <b id="best-g2">-</b></span>
+      </button>
+      <button class="gcard" style="--gc:var(--c3)" onclick="openGame('g3')">
+        <span class="gicon">🕊️</span><span class="gname">새 잡기</span>
+        <span class="gdesc">날아가는 새를 탭! 갈수록 빨라진다</span>
+        <span class="gbest">🏆 최고 <b id="best-g3">-</b></span>
+      </button>
+      <button class="gcard" style="--gc:var(--c4)" onclick="openGame('g4')">
+        <span class="gicon">⏰</span><span class="gname">N초 만들기</span>
+        <span class="gdesc">눈 감고 정확히 N초! 시간 감각 테스트</span>
+        <span class="gbest">🏆 최저오차 <b id="best-g4">-</b></span>
+      </button>
+      <button class="gcard" style="--gc:var(--c5)" onclick="openGame('g5')">
+        <span class="gicon">🔴</span><span class="gname">색깔 반응</span>
+        <span class="gdesc">빨강만 탭! 다른 색은 참아라 (go/no-go)</span>
+        <span class="gbest">🏆 최고 <b id="best-g5">-</b></span>
+      </button>
+      <button class="gcard" style="--gc:var(--c6)" onclick="openGame('g6')">
+        <span class="gicon">⚔️</span><span class="gname">1v1 빠른 손</span>
+        <span class="gdesc">폰 하나로 두 명이 대결! 5판 3선승</span>
+        <span class="gbest">친구와 대결!</span>
+      </button>
+    </div>
+    <div class="hubfoot">
+      <button class="soundtoggle" id="sndtgl" onclick="toggleSound()">🔊 효과음 켜짐</button><br>
+      <a href="./index.html" style="display:inline-block;color:var(--c4);font-weight:700;text-decoration:none;background:var(--card);border-radius:99px;padding:8px 16px;margin:4px 0 10px;">🏠 AI 모션 트레이닝 센터로</a><br>
+      체육 수업 · 반응속도 훈련용 — @kimju.zip
+    </div>
+  </div>
+</div>
+
+<!-- ════════ G1 타이밍 바 ════════ -->
+<div class="screen" id="g1">
+  <div class="wrap">
+    <div class="gamehead">
+      <button class="backbtn" onclick="goHub()">←</button>
+      <div><h2>🎯 타이밍 바<span class="diffbadge" id="db-g1"></span></h2><div class="gh-sub">바가 보라색 존에 들어올 때 탭! 15회 도전</div></div>
+    </div>
+    <div class="statrow">
+      <div class="stat"><div class="sl">점수</div><div class="sv" id="g1score" style="color:var(--c1)">0</div></div>
+      <div class="stat"><div class="sl">남은 탭</div><div class="sv" id="g1left">15</div></div>
+      <div class="stat"><div class="sl">최대 콤보</div><div class="sv" id="g1maxcombo" style="color:var(--c3)">0</div></div>
+    </div>
+    <div class="track" id="g1track">
+      <div class="zone-good"></div>
+      <div class="zone-perfect"></div>
+      <div class="bar" id="g1bar"></div>
+    </div>
+    <div class="judge" id="g1judge"></div>
+    <div class="combo" id="g1combo"></div>
+    <div id="g1play">
+      <button class="bigbtn tapbtn" id="g1tap">탭!</button>
+      <button class="ghostbtn" onclick="g1.start()">처음부터</button>
+    </div>
+    <div id="g1result" style="display:none">
+      <div class="resultbox">
+        <div class="grade" id="g1grade"></div>
+        <div class="rmain" id="g1final"></div>
+        <div class="rdesc" id="g1rdesc"></div>
+        <div id="g1new"></div>
+      </div>
+      <button class="bigbtn tapbtn" onclick="g1.start()">다시 도전</button>
+      <button class="ghostbtn" onclick="goHub()">홈으로</button>
+    </div>
+    <div style="height:24px"></div>
+  </div>
+</div>
+
+<!-- ════════ G2 신호등 ════════ -->
+<div class="screen" id="g2">
+  <div class="wrap">
+    <div class="gamehead">
+      <button class="backbtn" onclick="goHub()">←</button>
+      <div><h2>🚦 신호등 반응<span class="diffbadge" id="db-g2"></span></h2><div class="gh-sub">초록불이 켜지면 화면을 탭! 5회 평균</div></div>
+    </div>
+    <div class="rounds" id="g2rounds">
+      <span>1회</span><span>2회</span><span>3회</span><span>4회</span><span>5회</span>
+    </div>
+    <div class="light" id="g2light">
+      <div class="licon" id="g2icon">🚦</div>
+      <div class="ltxt" id="g2txt">탭해서 시작</div>
+      <div class="lsub" id="g2sub">빨간불에서 기다렸다가, 초록불에 탭!</div>
+    </div>
+    <div id="g2result" style="display:none">
+      <div class="resultbox" style="margin-top:0">
+        <div class="grade" id="g2grade"></div>
+        <div class="rmain" id="g2avg"></div>
+        <div class="rdesc" id="g2rdesc"></div>
+        <div id="g2new"></div>
+      </div>
+      <button class="bigbtn" style="background:var(--c2)" onclick="g2.start()">다시 도전</button>
+      <button class="ghostbtn" onclick="goHub()">홈으로</button>
+    </div>
+    <div style="height:24px"></div>
+  </div>
+</div>
+
+<!-- ════════ G3 새 잡기 ════════ -->
+<div class="screen" id="g3">
+  <div class="wrap">
+    <div class="gamehead">
+      <button class="backbtn" onclick="goHub()">←</button>
+      <div><h2>🕊️ 새 잡기<span class="diffbadge" id="db-g3"></span></h2><div class="gh-sub">20초 동안 날아가는 새를 최대한 많이 탭!</div></div>
+    </div>
+    <div class="sky" id="g3sky">
+      <div class="skyhud">
+        <span>🐦 <span id="g3score">0</span>마리</span>
+        <span class="h-time">⏱ <span id="g3time">20.0</span>s</span>
+      </div>
+    </div>
+    <div id="g3play">
+      <button class="bigbtn tapstart" id="g3startbtn" onclick="g3.start()">시작!</button>
+    </div>
+    <div id="g3result" style="display:none">
+      <div class="resultbox" style="margin-top:0">
+        <div class="grade" id="g3grade"></div>
+        <div class="rmain" id="g3final"></div>
+        <div class="rdesc" id="g3rdesc"></div>
+        <div id="g3new"></div>
+      </div>
+      <button class="bigbtn tapstart" onclick="g3.start()">다시 도전</button>
+      <button class="ghostbtn" onclick="goHub()">홈으로</button>
+    </div>
+    <div style="height:24px"></div>
+  </div>
+</div>
+
+<!-- ════════ G4 N초 만들기 ════════ -->
+<div class="screen" id="g4">
+  <div class="wrap">
+    <div class="gamehead">
+      <button class="backbtn" onclick="goHub()">←</button>
+      <div><h2>⏰ N초 만들기<span class="diffbadge" id="db-g4"></span></h2><div class="gh-sub">시작 누르고, 딱 N초 됐을 때 정지! 5회 평균 오차</div></div>
+    </div>
+    <div class="secpick" id="g4pick">
+      <button class="sel" data-s="3" onclick="g4.pick(3,this)">3초</button>
+      <button data-s="5" onclick="g4.pick(5,this)">5초</button>
+      <button data-s="10" onclick="g4.pick(10,this)">10초</button>
+    </div>
+    <div class="rounds" id="g4rounds" style="display:flex;gap:8px;justify-content:center;margin-bottom:10px">
+      <span style="min-width:54px;text-align:center;background:var(--card);border-radius:10px;padding:7px 6px;font-size:12.5px;color:var(--sub)">1회</span>
+      <span style="min-width:54px;text-align:center;background:var(--card);border-radius:10px;padding:7px 6px;font-size:12.5px;color:var(--sub)">2회</span>
+      <span style="min-width:54px;text-align:center;background:var(--card);border-radius:10px;padding:7px 6px;font-size:12.5px;color:var(--sub)">3회</span>
+      <span style="min-width:54px;text-align:center;background:var(--card);border-radius:10px;padding:7px 6px;font-size:12.5px;color:var(--sub)">4회</span>
+      <span style="min-width:54px;text-align:center;background:var(--card);border-radius:10px;padding:7px 6px;font-size:12.5px;color:var(--sub)">5회</span>
+    </div>
+    <div class="timerzone" id="g4zone" onclick="g4.zoneTap()">
+      <div class="tz-big" id="g4big">3.00</div>
+      <div class="tz-sub" id="g4sub">아래 버튼으로 시작 → 머릿속으로 세고 화면 탭!</div>
+    </div>
+    <div id="g4play">
+      <button class="bigbtn startbtn" id="g4btn" onclick="g4.mainBtn()">시작</button>
+    </div>
+    <div id="g4result" style="display:none">
+      <div class="resultbox" style="margin-top:0">
+        <div class="grade" id="g4grade"></div>
+        <div class="rmain" id="g4avg"></div>
+        <div class="rdesc" id="g4rdesc"></div>
+        <div id="g4new"></div>
+      </div>
+      <button class="bigbtn startbtn" onclick="g4.start()">다시 도전</button>
+      <button class="ghostbtn" onclick="goHub()">홈으로</button>
+    </div>
+    <div style="height:24px"></div>
+  </div>
+</div>
+
+<!-- ════════ G5 색깔 go/no-go ════════ -->
+<div class="screen" id="g5">
+  <div class="wrap">
+    <div class="gamehead">
+      <button class="backbtn" onclick="goHub()">←</button>
+      <div><h2>🔴 색깔 반응<span class="diffbadge" id="db-g5"></span></h2><div class="gh-sub">빨간 원만 탭! 다른 색은 절대 탭하면 안 됨 · 30초</div></div>
+    </div>
+    <div class="arena" id="g5arena">
+      <div class="ahud">
+        <span>점수 <span id="g5score" style="color:var(--c5)">0</span></span>
+        <span>⏱ <span id="g5time">30</span>s</span>
+      </div>
+      <div class="target" id="g5target" onpointerdown="g5.tapTarget(event)"></div>
+      <div class="fb" id="g5fb"></div>
+    </div>
+    <div id="g5play">
+      <button class="bigbtn startbtn" onclick="g5.start()">시작!</button>
+    </div>
+    <div id="g5result" style="display:none">
+      <div class="resultbox" style="margin-top:0">
+        <div class="grade" id="g5grade"></div>
+        <div class="rmain" id="g5final"></div>
+        <div class="rdesc" id="g5rdesc"></div>
+        <div id="g5new"></div>
+      </div>
+      <button class="bigbtn startbtn" onclick="g5.start()">다시 도전</button>
+      <button class="ghostbtn" onclick="goHub()">홈으로</button>
+    </div>
+    <div style="height:24px"></div>
+  </div>
+</div>
+
+<!-- ════════ G6 1v1 빠른 손 ════════ -->
+<div class="screen" id="g6">
+  <div class="duel">
+    <div class="pzone ptop" id="g6top" onpointerdown="g6.tap('top',event)">
+      <span id="g6topname">플레이어 1</span>
+      <span class="psub" id="g6topsub">준비되면 탭</span>
+    </div>
+    <div class="center">
+      <div class="pips top" id="g6pipstop"><i></i><i></i><i></i></div>
+      <div class="sigdot" id="g6sig"></div>
+      <div class="pips bot" id="g6pipsbot"><i></i><i></i><i></i></div>
+      <button class="exitduel" onclick="goHub()">✕</button>
+    </div>
+    <div class="pzone pbot" id="g6bot" onpointerdown="g6.tap('bot',event)">
+      <span id="g6botname">플레이어 2</span>
+      <span class="psub" id="g6botsub">준비되면 탭</span>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ════════════════ 공통 시스템 ════════════════ */
+const $=id=>document.getElementById(id);
+let soundOn=true;
+const mem={};
+const store={
+  get(k){try{return localStorage.getItem(k)??mem[k]}catch(e){return mem[k]}},
+  set(k,v){mem[k]=String(v);try{localStorage.setItem(k,v)}catch(e){}}
+};
+
+/* 난이도 시스템 */
+const DIFFS={
+  easy:{label:'하',color:'#34D399',bg:'rgba(52,211,153,.15)'},
+  normal:{label:'중',color:'#FBBF24',bg:'rgba(251,191,36,.15)'},
+  hard:{label:'상',color:'#F87171',bg:'rgba(248,113,113,.15)'}
+};
+const P={
+  g1:{easy:  {sp:.4, max:.9, inc:.06,pz:[.42,.58],gz:[.32,.68],gr:[1500,1100,750,400]},
+      normal:{sp:.55,max:1.3,inc:.08,pz:[.44,.56],gz:[.35,.65],gr:[1800,1300,900,500]},
+      hard:  {sp:.78,max:1.9,inc:.12,pz:[.46,.54],gz:[.40,.60],gr:[2000,1500,1000,550]}},
+  g2:{easy:  {dmin:1500,dmax:3000,fake:0,  gr:[240,310,390,500]},
+      normal:{dmin:1500,dmax:4000,fake:0,  gr:[220,280,350,450]},
+      hard:  {dmin:1000,dmax:5000,fake:.55,gr:[200,260,330,430]}},
+  g3:{easy:  {base:85, acc:140,smax:44,smin:32,gapmax:1050,gapmin:380,gr:[22,17,12,7]},
+      normal:{base:110,acc:200,smax:38,smin:26,gapmax:900, gapmin:280,gr:[26,20,14,8]},
+      hard:  {base:145,acc:300,smax:31,smin:19,gapmax:700, gapmin:200,gr:[28,22,15,9]}},
+  g4:{easy:  {distract:false,gr:[200,400,700,1100]},
+      normal:{distract:false,gr:[120,250,450,800]},
+      hard:  {distract:true, gr:[90,200,380,650]}},
+  g5:{easy:  {show:1400,gmin:600,gmax:1500,gop:.55,stroop:false,gr:[110,80,50,25]},
+      normal:{show:1100,gmin:500,gmax:1400,gop:.45,stroop:false,gr:[120,90,60,30]},
+      hard:  {show:850, gmin:350,gmax:1000,gop:.4, stroop:true, gr:[140,100,70,35]}},
+  g6:{easy:  {dmin:1500,dmax:3000,fake:0},
+      normal:{dmin:1500,dmax:4500,fake:0},
+      hard:  {dmin:1000,dmax:5000,fake:.55}}
+};
+let diff=store.get('rl_diff')||'normal';
+if(!DIFFS[diff])diff='normal';
+const gp=g=>P[g][diff];
+function setDiff(d){diff=d;store.set('rl_diff',d);applyDiffUI();refreshBests();beep(d==='hard'?440:d==='normal'?660:880,.08)}
+function applyDiffUI(){
+  document.querySelectorAll('#diffseg button').forEach(b=>b.classList.toggle('sel',b.dataset.d===diff));
+  const D=DIFFS[diff];
+  ['g1','g2','g3','g4','g5'].forEach(g=>{
+    const el=$('db-'+g);if(!el)return;
+    el.textContent=D.label;el.style.color=D.color;el.style.background=D.bg;
+  });
+}
+
+/* Web Audio 비프음 */
+let actx=null;
+function beep(freq=880,dur=0.08,type='sine',vol=0.25){
+  if(!soundOn)return;
+  try{
+    actx=actx||new (window.AudioContext||window.webkitAudioContext)();
+    if(actx.state==='suspended')actx.resume();
+    const o=actx.createOscillator(),g=actx.createGain();
+    o.type=type;o.frequency.value=freq;
+    g.gain.setValueAtTime(vol,actx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+dur);
+    o.connect(g);g.connect(actx.destination);
+    o.start();o.stop(actx.currentTime+dur);
+  }catch(e){}
+}
+const sfx={
+  perfect(){beep(1320,.07);setTimeout(()=>beep(1760,.1),70)},
+  good(){beep(880,.09)},
+  miss(){beep(180,.18,'square',.18)},
+  go(){beep(1100,.12)},
+  count(){beep(660,.07)},
+  win(){beep(880,.08);setTimeout(()=>beep(1100,.08),90);setTimeout(()=>beep(1480,.14),180)},
+  catchbird(){beep(1500+Math.random()*400,.06,'triangle')},
+  tick(){beep(440,.04,'sine',.1)}
+};
+function toggleSound(){
+  soundOn=!soundOn;
+  const t=$('sndtgl');
+  t.textContent=soundOn?'🔊 효과음 켜짐':'🔇 효과음 꺼짐';
+  t.classList.toggle('off',!soundOn);
+  if(soundOn)beep(880,.08);
+}
+
+/* 화면 전환 */
+let current='hub';
+function openGame(id){
+  $(current).classList.remove('on');
+  $(id).classList.add('on');
+  current=id;
+  window.scrollTo(0,0);
+  games[id]?.enter?.();
+}
+function goHub(){
+  Object.values(games).forEach(g=>g.stop&&g.stop());
+  $(current).classList.remove('on');
+  $('hub').classList.add('on');
+  current='hub';
+  refreshBests();
+}
+function refreshBests(){
+  const k=s=>store.get(s+'_'+diff);
+  const b1=k('rl_g1');$('best-g1').textContent=b1?b1+'점':'-';
+  const b2=k('rl_g2');$('best-g2').textContent=b2?b2+'ms':'-';
+  const b3=k('rl_g3');$('best-g3').textContent=b3?b3+'마리':'-';
+  const b4=k('rl_g4');$('best-g4').textContent=b4?(+b4/1000).toFixed(2)+'s':'-';
+  const b5=k('rl_g5');$('best-g5').textContent=b5?b5+'점':'-';
+}
+function checkBest(key,val,higherBetter){
+  const prev=store.get(key);
+  if(prev==null||(higherBetter?val>+prev:val<+prev)){store.set(key,val);return true}
+  return false;
+}
+
+/* ════════════════ G1 타이밍 바 ════════════════ */
+const g1={
+  raf:null,pos:0,dir:1,speed:0.55,taps:0,score:0,combo:0,maxCombo:0,playing:false,
+  enter(){this.start()},
+  start(){
+    this.stop();
+    const p=gp('g1');this.p=p;
+    this.pos=0;this.dir=1;this.speed=p.sp;this.taps=15;this.score=0;this.combo=0;this.maxCombo=0;this.playing=true;
+    const gz=document.querySelector('#g1 .zone-good'),pz=document.querySelector('#g1 .zone-perfect');
+    gz.style.left=(p.gz[0]*100)+'%';gz.style.width=((p.gz[1]-p.gz[0])*100)+'%';
+    pz.style.left=(p.pz[0]*100)+'%';pz.style.width=((p.pz[1]-p.pz[0])*100)+'%';
+    $('g1score').textContent='0';$('g1left').textContent='15';$('g1maxcombo').textContent='0';
+    $('g1judge').textContent='';$('g1combo').textContent='';
+    $('g1play').style.display='block';$('g1result').style.display='none';
+    let last=performance.now();
+    const loop=t=>{
+      const dt=(t-last)/1000;last=t;
+      this.pos+=this.dir*this.speed*dt;
+      if(this.pos>=1){this.pos=1;this.dir=-1}
+      if(this.pos<=0){this.pos=0;this.dir=1}
+      const track=$('g1track'),bar=$('g1bar');
+      bar.style.left=(this.pos*(track.clientWidth-10))+'px';
+      this.raf=requestAnimationFrame(loop);
+    };
+    this.raf=requestAnimationFrame(loop);
+  },
+  tap(){
+    if(!this.playing)return;
+    const center=this.pos;
+    let judge,pts;
+    const z=this.p;
+    if(center>=z.pz[0]&&center<=z.pz[1]){judge='PERFECT';pts=100;sfx.perfect();this.combo++}
+    else if(center>=z.gz[0]&&center<=z.gz[1]){judge='GOOD';pts=50;sfx.good();this.combo++}
+    else{judge='MISS';pts=0;sfx.miss();this.combo=0}
+    this.maxCombo=Math.max(this.maxCombo,this.combo);
+    const mult=1+Math.floor(this.combo/3)*0.5;
+    this.score+=Math.round(pts*mult);
+    this.taps--;
+    if(this.combo>0&&this.combo%3===0)this.speed=Math.min(this.speed+this.p.inc,this.p.max);
+    const j=$('g1judge');
+    j.textContent=judge+(judge!=='MISS'&&mult>1?' ×'+mult.toFixed(1):'');
+    j.className='judge j-'+judge.toLowerCase();
+    $('g1combo').innerHTML=this.combo>1?`🔥 <b>${this.combo}</b> 콤보!`:'';
+    $('g1score').textContent=this.score;
+    $('g1left').textContent=this.taps;
+    $('g1maxcombo').textContent=this.maxCombo;
+    if(this.taps<=0)this.finish();
+  },
+  finish(){
+    this.playing=false;
+    cancelAnimationFrame(this.raf);this.raf=null;
+    const s=this.score;
+    const g=this.p.gr;
+    const grade=s>=g[0]?'🏆 S':s>=g[1]?'🥇 A':s>=g[2]?'🥈 B':s>=g[3]?'🥉 C':'💪 D';
+    $('g1grade').textContent=grade;
+    $('g1final').textContent=s+'점';
+    $('g1rdesc').textContent=`최대 콤보 ${this.maxCombo} · 퍼펙트존을 노려 콤보 배율을 쌓아보세요!`;
+    $('g1new').innerHTML=checkBest('rl_g1_'+diff,s,true)?'<span class="newrecord">🎉 신기록!</span>':'';
+    $('g1play').style.display='none';$('g1result').style.display='block';
+    sfx.win();
+  },
+  stop(){if(this.raf){cancelAnimationFrame(this.raf);this.raf=null}this.playing=false}
+};
+$('g1tap').addEventListener('pointerdown',e=>{e.preventDefault();g1.tap()});
+
+/* ════════════════ G2 신호등 ════════════════ */
+const g2={
+  state:'idle',timer:null,goTime:0,results:[],
+  enter(){this.reset()},
+  reset(){
+    this.state='idle';this.results=[];
+    clearTimeout(this.timer);clearTimeout(this.fakeT);clearTimeout(this.fakeT2);
+    const l=$('g2light');l.className='light';
+    $('g2icon').textContent='🚦';$('g2txt').textContent='탭해서 시작';
+    $('g2sub').textContent='빨간불에서 기다렸다가, 초록불에 탭!';
+    $('g2result').style.display='none';l.style.display='flex';
+    document.querySelectorAll('#g2rounds span').forEach((s,i)=>{s.textContent=(i+1)+'회';s.className=''});
+  },
+  start(){this.reset()},
+  next(){
+    this.state='wait';
+    const p=gp('g2');
+    const l=$('g2light');l.className='light wait';
+    $('g2icon').textContent='🔴';$('g2txt').textContent='기다려…';
+    $('g2sub').textContent=p.fake?'💀 노란 페이크에 속지 마라!':'초록불이 켜질 때까지 참아라!';
+    const delay=p.dmin+Math.random()*(p.dmax-p.dmin);
+    if(p.fake&&Math.random()<p.fake){
+      this.fakeT=setTimeout(()=>{
+        if(this.state!=='wait')return;
+        $('g2icon').textContent='🟡';$('g2txt').textContent='속지 마!';
+        beep(520,.1);
+        this.fakeT2=setTimeout(()=>{
+          if(this.state!=='wait')return;
+          $('g2icon').textContent='🔴';$('g2txt').textContent='기다려…';
+        },550);
+      },delay*(0.35+Math.random()*0.3));
+    }
+    this.timer=setTimeout(()=>{
+      this.state='go';this.goTime=performance.now();
+      l.className='light go';
+      $('g2icon').textContent='🟢';$('g2txt').textContent='탭!!!';$('g2sub').textContent='';
+      sfx.go();
+    },delay);
+  },
+  tap(){
+    if(this.state==='idle'){this.next();return}
+    if(this.state==='wait'){
+      clearTimeout(this.timer);clearTimeout(this.fakeT);clearTimeout(this.fakeT2);
+      this.state='early';sfx.miss();
+      const l=$('g2light');l.className='light early';
+      $('g2icon').textContent='⚠️';$('g2txt').textContent='너무 빨라요!';
+      $('g2sub').textContent='탭해서 다시 시도';
+      return;
+    }
+    if(this.state==='early'){this.next();return}
+    if(this.state==='go'){
+      const ms=Math.round(performance.now()-this.goTime);
+      this.results.push(ms);
+      sfx.good();
+      const idx=this.results.length-1;
+      const span=document.querySelectorAll('#g2rounds span')[idx];
+      span.textContent=ms+'ms';span.className='done';
+      if(this.results.length>=5){this.finish();return}
+      this.state='between';
+      const l=$('g2light');l.className='light';
+      $('g2icon').textContent='✅';$('g2txt').textContent=ms+'ms';
+      $('g2sub').textContent=`${this.results.length}/5 완료 · 탭해서 계속`;
+      return;
+    }
+    if(this.state==='between'){this.next();return}
+  },
+  finish(){
+    this.state='done';
+    $('g2light').style.display='none';
+    const avg=Math.round(this.results.reduce((a,b)=>a+b,0)/this.results.length);
+    const g=gp('g2').gr;
+    const grade=avg<g[0]?'⚡ S':avg<g[1]?'🥇 A':avg<g[2]?'🥈 B':avg<g[3]?'🥉 C':'💪 D';
+    $('g2grade').textContent=grade;
+    $('g2avg').textContent='평균 '+avg+'ms';
+    const best=Math.min(...this.results);
+    $('g2rdesc').textContent=`최고 ${best}ms · 성인 평균은 250ms 내외! 꾸준히 훈련하면 빨라져요`;
+    $('g2new').innerHTML=checkBest('rl_g2_'+diff,avg,false)?'<span class="newrecord">🎉 신기록!</span>':'';
+    $('g2result').style.display='block';
+    sfx.win();
+  },
+  stop(){clearTimeout(this.timer);clearTimeout(this.fakeT);clearTimeout(this.fakeT2);this.state='idle'}
+};
+$('g2light').addEventListener('pointerdown',e=>{e.preventDefault();g2.tap()});
+
+/* ════════════════ G3 새 잡기 ════════════════ */
+const g3={
+  playing:false,raf:null,spawnT:null,birds:[],score:0,spawned:0,endAt:0,
+  enter(){this.resetUI()},
+  resetUI(){
+    $('g3score').textContent='0';$('g3time').textContent='20.0';
+    $('g3play').style.display='block';$('g3result').style.display='none';
+    this.clearBirds();
+  },
+  clearBirds(){this.birds.forEach(b=>b.el.remove());this.birds=[]},
+  start(){
+    this.stop();this.resetUI();
+    this.playing=true;this.score=0;this.spawned=0;
+    this.endAt=performance.now()+20000;
+    $('g3play').style.display='none';
+    this.spawn();
+    let last=performance.now();
+    const loop=t=>{
+      if(!this.playing)return;
+      const dt=(t-last)/1000;last=t;
+      const remain=Math.max(0,this.endAt-t);
+      $('g3time').textContent=(remain/1000).toFixed(1);
+      const sky=$('g3sky'),W=sky.clientWidth;
+      this.birds=this.birds.filter(b=>{
+        b.x+=b.vx*dt;
+        b.y+=Math.sin(t/300+b.phase)*0.4;
+        b.el.style.transform=`translate(${b.x}px,${b.y}px) scaleX(${b.vx>0?-1:1})`;
+        if(b.x<-60||b.x>W+60){b.el.remove();return false}
+        return true;
+      });
+      if(remain<=0){this.finish();return}
+      this.raf=requestAnimationFrame(loop);
+    };
+    this.raf=requestAnimationFrame(loop);
+  },
+  spawn(){
+    if(!this.playing)return;
+    const sky=$('g3sky'),W=sky.clientWidth,H=sky.clientHeight;
+    const elapsed=20-(this.endAt-performance.now())/1000;
+    const prog=Math.min(elapsed/20,1);
+    const p=gp('g3');
+    const fromLeft=Math.random()<0.5;
+    const speed=(p.base+prog*p.acc)*(0.85+Math.random()*0.4);
+    const size=Math.max(p.smin,p.smax-prog*(p.smax-p.smin));
+    const b={
+      x:fromLeft?-50:W+50,
+      y:30+Math.random()*(H-90),
+      vx:fromLeft?speed:-speed,
+      phase:Math.random()*6,
+      el:document.createElement('div')
+    };
+    b.el.className='bird';
+    b.el.textContent=['🕊️','🐦','🦜','🦅'][Math.floor(Math.random()*4)];
+    b.el.style.fontSize=size+'px';
+    b.el.style.left='0';b.el.style.top='0';
+    b.el.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();this.catch(b)});
+    sky.appendChild(b.el);
+    this.birds.push(b);
+    this.spawned++;
+    const gap=Math.max(p.gapmin,p.gapmax-prog*(p.gapmax-p.gapmin));
+    this.spawnT=setTimeout(()=>this.spawn(),gap*(0.7+Math.random()*0.6));
+  },
+  catch(b){
+    if(!this.playing)return;
+    const i=this.birds.indexOf(b);
+    if(i<0)return;
+    this.birds.splice(i,1);
+    this.score++;
+    sfx.catchbird();
+    $('g3score').textContent=this.score;
+    const pop=document.createElement('div');
+    pop.className='pop';pop.textContent='+1';
+    pop.style.left=b.x+'px';pop.style.top=b.y+'px';
+    $('g3sky').appendChild(pop);
+    setTimeout(()=>pop.remove(),500);
+    b.el.remove();
+  },
+  finish(){
+    this.playing=false;
+    cancelAnimationFrame(this.raf);clearTimeout(this.spawnT);
+    this.clearBirds();
+    const s=this.score;
+    const rate=this.spawned?Math.round(s/this.spawned*100):0;
+    const g=gp('g3').gr;
+    const grade=s>=g[0]?'🏆 S':s>=g[1]?'🥇 A':s>=g[2]?'🥈 B':s>=g[3]?'🥉 C':'💪 D';
+    $('g3grade').textContent=grade;
+    $('g3final').textContent=s+'마리';
+    $('g3rdesc').textContent=`포획률 ${rate}% · 후반으로 갈수록 빨라지는 새를 노려보세요!`;
+    $('g3new').innerHTML=checkBest('rl_g3_'+diff,s,true)?'<span class="newrecord">🎉 신기록!</span>':'';
+    $('g3result').style.display='block';
+    sfx.win();
+  },
+  stop(){
+    this.playing=false;
+    if(this.raf)cancelAnimationFrame(this.raf);
+    clearTimeout(this.spawnT);
+    this.clearBirds();
+  }
+};
+
+/* ════════════════ G4 N초 만들기 ════════════════ */
+const g4={
+  target:3,state:'idle',startT:0,results:[],round:0,
+  enter(){this.start()},
+  pick(s,btn){
+    if(this.state==='running')return;
+    this.target=s;
+    document.querySelectorAll('#g4pick button').forEach(b=>b.classList.remove('sel'));
+    btn.classList.add('sel');
+    this.start();
+  },
+  start(){
+    this.state='idle';this.results=[];this.round=0;
+    $('g4big').textContent=this.target.toFixed(2);
+    $('g4sub').textContent='아래 버튼으로 시작 → 머릿속으로 세고 화면 탭!';
+    $('g4zone').classList.remove('running');
+    $('g4btn').textContent='시작';
+    $('g4play').style.display='block';$('g4result').style.display='none';
+    document.querySelectorAll('#g4rounds span').forEach((s,i)=>{s.textContent=(i+1)+'회';s.style.color='var(--sub)';s.style.fontWeight='400'});
+  },
+  mainBtn(){
+    if(this.state==='idle'||this.state==='between')this.begin();
+  },
+  begin(){
+    this.state='running';
+    this.startT=performance.now();
+    $('g4zone').classList.add('running');
+    $('g4big').textContent='🤫';
+    const p=gp('g4');
+    $('g4sub').textContent=p.distract?`💀 ${this.target}초가 됐을 때 탭! 방해음에 흔들리지 마라`:`정확히 ${this.target}초라고 생각될 때 이 화면을 탭!`;
+    $('g4btn').textContent='진행 중…';
+    sfx.count();
+    if(p.distract)this.runDistract();
+  },
+  runDistract(){
+    if(this.state!=='running')return;
+    this.distT=setTimeout(()=>{
+      if(this.state!=='running')return;
+      beep(250+Math.random()*1100,.07,'sine',.16);
+      this.runDistract();
+    },450+Math.random()*900);
+  },
+  zoneTap(){
+    if(this.state!=='running')return;
+    clearTimeout(this.distT);
+    const elapsed=performance.now()-this.startT;
+    const err=Math.abs(elapsed-this.target*1000);
+    this.results.push(err);
+    const span=document.querySelectorAll('#g4rounds span')[this.round];
+    const sign=elapsed>this.target*1000?'+':'-';
+    span.textContent=sign+(err/1000).toFixed(2)+'s';
+    span.style.color=err<150?'var(--c2)':err<400?'var(--c3)':'var(--c5)';
+    span.style.fontWeight='700';
+    this.round++;
+    sfx.good();
+    $('g4zone').classList.remove('running');
+    if(this.round>=5){this.finish();return}
+    this.state='between';
+    $('g4big').textContent=(elapsed/1000).toFixed(2)+'s';
+    $('g4sub').textContent=`오차 ${(err/1000).toFixed(2)}초 · ${this.round}/5 완료`;
+    $('g4btn').textContent='다음 라운드';
+  },
+  finish(){
+    this.state='done';
+    const avg=Math.round(this.results.reduce((a,b)=>a+b,0)/this.results.length);
+    const g=gp('g4').gr;
+    const grade=avg<g[0]?'🧘 S':avg<g[1]?'🥇 A':avg<g[2]?'🥈 B':avg<g[3]?'🥉 C':'💪 D';
+    $('g4grade').textContent=grade;
+    $('g4avg').textContent='평균 오차 '+(avg/1000).toFixed(2)+'초';
+    $('g4rdesc').textContent=`${this.target}초 도전 · 마음속 박자가 정확할수록 오차가 줄어요!`;
+    $('g4new').innerHTML=checkBest('rl_g4_'+diff,avg,false)?'<span class="newrecord">🎉 신기록!</span>':'';
+    $('g4play').style.display='none';$('g4result').style.display='block';
+    sfx.win();
+  },
+  stop(){this.state='idle';clearTimeout(this.distT)}
+};
+
+/* ════════════════ G5 색깔 go/no-go ════════════════ */
+const g5={
+  playing:false,timer:null,trialT:null,hideT:null,score:0,endTimer:null,
+  isGo:false,showT:0,goCount:0,goHit:0,rts:[],
+  colors:[
+    {name:'빨강',c:'#E24B4A',go:true},
+    {name:'파랑',c:'#378ADD',go:false},
+    {name:'초록',c:'#2FAB70',go:false},
+    {name:'노랑',c:'#E0A415',go:false},
+    {name:'보라',c:'#8B7CF6',go:false}
+  ],
+  enter(){this.resetUI()},
+  resetUI(){
+    $('g5score').textContent='0';$('g5time').textContent='30';
+    $('g5fb').textContent='';
+    $('g5target').className='target';
+    $('g5play').style.display='block';$('g5result').style.display='none';
+  },
+  start(){
+    this.stop();this.resetUI();
+    this.playing=true;this.score=0;this.goCount=0;this.goHit=0;this.rts=[];
+    $('g5play').style.display='none';
+    if(gp('g5').stroop){
+      const f=$('g5fb');
+      f.textContent='💀 글자는 함정! 원의 "색깔"만 보고 판단해라';
+      f.style.color='var(--c3)';
+      clearTimeout(this._fbT);
+      this._fbT=setTimeout(()=>f.textContent='',2800);
+    }
+    let remain=30;
+    this.timer=setInterval(()=>{
+      remain--;
+      $('g5time').textContent=remain;
+      if(remain<=5&&remain>0)sfx.tick();
+      if(remain<=0)this.finish();
+    },1000);
+    this.nextTrial();
+  },
+  nextTrial(){
+    if(!this.playing)return;
+    const p=gp('g5');
+    const delay=p.gmin+Math.random()*(p.gmax-p.gmin);
+    this.trialT=setTimeout(()=>{
+      if(!this.playing)return;
+      const goP=Math.random()<p.gop;
+      const pool=goP?this.colors.filter(c=>c.go):this.colors.filter(c=>!c.go);
+      const col=pool[Math.floor(Math.random()*pool.length)];
+      this.isGo=col.go;
+      if(col.go)this.goCount++;
+      this.showT=performance.now();
+      const t=$('g5target');
+      t.style.background=col.c;
+      let word=col.name;
+      if(p.stroop&&Math.random()<0.65)word=this.colors[Math.floor(Math.random()*this.colors.length)].name;
+      t.textContent=word;
+      t.classList.add('show');
+      t.dataset.live='1';
+      this.hideT=setTimeout(()=>{
+        if(t.dataset.live==='1'){
+          t.classList.remove('show');t.dataset.live='0';
+          if(this.isGo)this.feedback('놓쳤다! 😅','var(--c3)');
+        }
+        this.nextTrial();
+      },p.show);
+    },delay);
+  },
+  tapTarget(e){
+    e.preventDefault();
+    const t=$('g5target');
+    if(!this.playing||t.dataset.live!=='1')return;
+    t.dataset.live='0';
+    clearTimeout(this.hideT);
+    t.classList.remove('show');
+    if(this.isGo){
+      const rt=Math.round(performance.now()-this.showT);
+      this.rts.push(rt);this.goHit++;
+      this.score+=10;
+      this.feedback(`+10 (${rt}ms) ⚡`,'var(--c2)');
+      sfx.good();
+    }else{
+      this.score-=10;
+      this.feedback('-10 참았어야지! 🙈','var(--c5)');
+      sfx.miss();
+    }
+    $('g5score').textContent=this.score;
+    this.nextTrial();
+  },
+  feedback(msg,color){
+    const f=$('g5fb');
+    f.textContent=msg;f.style.color=color;
+    clearTimeout(this._fbT);
+    this._fbT=setTimeout(()=>f.textContent='',900);
+  },
+  finish(){
+    this.playing=false;
+    clearInterval(this.timer);clearTimeout(this.trialT);clearTimeout(this.hideT);
+    $('g5target').classList.remove('show');
+    const s=this.score;
+    const avgRt=this.rts.length?Math.round(this.rts.reduce((a,b)=>a+b,0)/this.rts.length):0;
+    const acc=this.goCount?Math.round(this.goHit/this.goCount*100):0;
+    const g=gp('g5').gr;
+    const grade=s>=g[0]?'🧠 S':s>=g[1]?'🥇 A':s>=g[2]?'🥈 B':s>=g[3]?'🥉 C':'💪 D';
+    $('g5grade').textContent=grade;
+    $('g5final').textContent=s+'점';
+    $('g5rdesc').textContent=`빨강 포착률 ${acc}% · 평균 반응 ${avgRt}ms · 참는 것도 실력!`;
+    $('g5new').innerHTML=checkBest('rl_g5_'+diff,s,true)?'<span class="newrecord">🎉 신기록!</span>':'';
+    $('g5result').style.display='block';
+    sfx.win();
+  },
+  stop(){
+    this.playing=false;
+    clearInterval(this.timer);clearTimeout(this.trialT);clearTimeout(this.hideT);
+  }
+};
+
+/* ════════════════ G6 1v1 빠른 손 ════════════════ */
+const g6={
+  state:'idle',timer:null,fireT:0,wins:{top:0,bot:0},ready:{top:false,bot:false},
+  enter(){this.resetMatch()},
+  resetMatch(){
+    this.wins={top:0,bot:0};
+    this.updatePips();
+    this.resetRound();
+  },
+  resetRound(){
+    this.state='idle';this.ready={top:false,bot:false};
+    clearTimeout(this.timer);clearTimeout(this.fakeT);clearTimeout(this.fakeT2);
+    $('g6sig').classList.remove('fire');$('g6sig').style.background='';
+    $('g6top').className='pzone ptop';$('g6bot').className='pzone pbot';
+    $('g6topname').textContent='플레이어 1';$('g6botname').textContent='플레이어 2';
+    $('g6topsub').textContent='준비되면 탭';$('g6botsub').textContent='준비되면 탭';
+  },
+  updatePips(){
+    document.querySelectorAll('#g6pipstop i').forEach((p,i)=>p.classList.toggle('won',i<this.wins.top));
+    document.querySelectorAll('#g6pipsbot i').forEach((p,i)=>p.classList.toggle('won',i<this.wins.bot));
+  },
+  tap(side,e){
+    e.preventDefault();
+    if(this.state==='idle'){
+      this.ready[side]=true;
+      $(side==='top'?'g6topsub':'g6botsub').textContent='준비 완료 ✅';
+      if(this.ready.top&&this.ready.bot)this.arm();
+      return;
+    }
+    if(this.state==='armed'){
+      this.roundEnd(side==='top'?'bot':'top',side,'부정출발! ⚠️');
+      return;
+    }
+    if(this.state==='fired'){
+      const ms=Math.round(performance.now()-this.fireT);
+      this.roundEnd(side,side==='top'?'bot':'top',ms+'ms ⚡',true);
+      return;
+    }
+    if(this.state==='roundend'){
+      if(this.wins.top>=3||this.wins.bot>=3)this.resetMatch();
+      else this.resetRound();
+      return;
+    }
+  },
+  arm(){
+    this.state='armed';
+    $('g6topname').textContent='🟢 신호를 기다려…';
+    $('g6botname').textContent='🟢 신호를 기다려…';
+    $('g6topsub').textContent='먼저 누르면 패배!';
+    $('g6botsub').textContent='먼저 누르면 패배!';
+    const p=gp('g6');
+    if(p.fake)$('g6topsub').textContent=$('g6botsub').textContent='💀 노란 점멸은 페이크! 초록만 진짜';
+    const delay=p.dmin+Math.random()*(p.dmax-p.dmin);
+    if(p.fake&&Math.random()<p.fake){
+      this.fakeT=setTimeout(()=>{
+        if(this.state!=='armed')return;
+        const s=$('g6sig');
+        s.style.background='#FBBF24';
+        beep(520,.1);
+        this.fakeT2=setTimeout(()=>{if(this.state==='armed')s.style.background=''},320);
+      },delay*(0.35+Math.random()*0.3));
+    }
+    this.timer=setTimeout(()=>{
+      this.state='fired';
+      this.fireT=performance.now();
+      const s=$('g6sig');s.style.background='';
+      s.classList.add('fire');
+      sfx.go();
+    },delay);
+  },
+  roundEnd(winner,loser,msg,legit){
+    clearTimeout(this.timer);clearTimeout(this.fakeT);clearTimeout(this.fakeT2);
+    this.state='roundend';
+    this.wins[winner]++;
+    this.updatePips();
+    $('g6sig').classList.remove('fire');$('g6sig').style.background='';
+    const wz=$(winner==='top'?'g6top':'g6bot'),lz=$(loser==='top'?'g6top':'g6bot');
+    wz.classList.add('winflash');lz.classList.add('losef');
+    const wname=winner==='top'?'g6topname':'g6botname';
+    const lname=loser==='top'?'g6topname':'g6botname';
+    if(this.wins[winner]>=3){
+      $(wname).textContent='🏆 최종 승리!!';
+      $(loser==='top'?'g6topname':'g6botname').textContent='다음에 다시! 💪';
+      $('g6topsub').textContent='탭해서 새 경기';
+      $('g6botsub').textContent='탭해서 새 경기';
+      sfx.win();
+    }else{
+      $(wname).textContent=legit?'🎉 승리! '+msg:'🎉 승리!';
+      $(lname).textContent=legit?'아깝다!':msg;
+      $('g6topsub').textContent=`${this.wins.top} : ${this.wins.bot} · 탭해서 다음 라운드`;
+      $('g6botsub').textContent=`${this.wins.bot} : ${this.wins.top} · 탭해서 다음 라운드`;
+      legit?sfx.perfect():sfx.miss();
+    }
+  },
+  stop(){clearTimeout(this.timer);clearTimeout(this.fakeT);clearTimeout(this.fakeT2);this.state='idle'}
+};
+
+const games={g1,g2,g3,g4,g5,g6};
+applyDiffUI();
+refreshBests();
+document.addEventListener('contextmenu',e=>e.preventDefault());
+</script>
+</body>
+</html>

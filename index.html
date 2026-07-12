@@ -218,14 +218,21 @@
       </div>
       <div class="hub-sec">미니게임 아케이드</div>
       <div class="hub-grid">
-        <button class="hcard" data-ex="mole" style="--c:rgba(251,191,36,.5);--tc:#fbbf24"><span class="ic">👾</span><div class="tt">두더지 잡기</div><div class="dd">45초 안에 손으로 최대한 많이!</div><div class="bst" data-best="mole"></div></button>
+        <button class="hcard" data-ex="mole" style="--c:rgba(251,191,36,.5);--tc:#fbbf24"><span class="ic">👾</span><div class="tt">두더지 잡기</div><div class="dd">60초 안에 손으로 최대한 많이!</div><div class="bst" data-best="mole"></div></button>
         <button class="hcard" data-ex="reaction" style="--c:rgba(251,113,133,.5);--tc:#fb7185"><span class="ic">⚡</span><div class="tt">반응속도 60초</div><div class="dd">번쩍이는 원을 쉬지 않고 최대한 많이!</div><div class="bst" data-best="reaction2"></div></button>
         <button class="hcard" data-ex="sequence" style="--c:rgba(167,139,250,.5);--tc:#a78bfa"><span class="ic">🔢</span><div class="tt">넘버 헌터</div><div class="dd">1→2→3→4 순서 터치, 60초 몇 세트?</div><div class="bst" data-best="sequence2"></div></button>
-        <button class="hcard" data-ex="tissue" style="--c:rgba(240,171,252,.5);--tc:#f0abfc"><span class="ic">🧻</span><div class="tt">스피드 휴지 뽑기</div><div class="dd">위로 휙휙! 30초 동안 몇 장?</div><div class="bst" data-best="tissue"></div></button>
+        <button class="hcard" data-ex="tissue" style="--c:rgba(240,171,252,.5);--tc:#f0abfc"><span class="ic">🧻</span><div class="tt">스피드 휴지 뽑기</div><div class="dd">위로 휙휙! 60초 동안 몇 장?</div><div class="bst" data-best="tissue"></div></button>
         <button class="hcard" data-ex="hammer" style="--c:rgba(234,179,8,.5);--tc:#eab308"><span class="ic">🔨</span><div class="tt">뚝딱 망치질</div><div class="dd">내리쳐서 못 박기 — 세 방이면 완성!</div><div class="bst" data-best="hammer"></div></button>
         <button class="hcard" data-ex="balloon" style="--c:rgba(56,189,248,.5);--tc:#38bdf8"><span class="ic">🎈</span><div class="tt">풍선 팡팡</div><div class="dd">도망가기 전에 팡! 황금풍선 보너스</div><div class="bst" data-best="balloon"></div></button>
         <button class="hcard" data-ex="fruit" style="--c:rgba(74,222,128,.5);--tc:#4ade80"><span class="ic">🍉</span><div class="tt">과일 베기</div><div class="dd">빠르게 휘둘러 싹둑! 💣폭탄 조심</div><div class="bst" data-best="fruit"></div></button>
         <button class="hcard" data-ex="dodge" style="--c:rgba(249,115,22,.5);--tc:#f97316"><span class="ic">☄️</span><div class="tt">운석 피하기</div><div class="dd">몸으로 피해서 최대한 오래 생존!</div><div class="bst" data-best="dodge"></div></button>
+        <button class="hcard" data-ex="mosquito" style="--c:rgba(163,230,53,.5);--tc:#a3e635"><span class="ic">🦟</span><div class="tt">모기 잡기</div><div class="dd">모기 근처에서 박수 짝! 60초 몇 마리?</div><div class="bst" data-best="mosquito"></div></button>
+        <button class="hcard" data-ex="board" style="--c:rgba(74,222,128,.5);--tc:#4ade80"><span class="ic">🧽</span><div class="tt">칠판 지우기</div><div class="dd">낙서 칠판을 문질러 클리어! 타임어택</div><div class="bst" data-best="board"></div></button>
+        <button class="hcard wide" data-ex="chop" style="--c:rgba(245,158,11,.5);--tc:#f59e0b"><span class="ic">🔪</span><div class="tt">도마 칼질</div><div class="dd">손날로 탁탁탁 채썰기 — 60초 동안 몇 조각이나 썰까?</div><div class="bst" data-best="chop"></div></button>
+      </div>
+      <div class="hub-sec">리액션 랩</div>
+      <div class="hub-grid">
+        <button class="hcard wide" id="reactionLabCard" style="--c:rgba(139,124,246,.55);--tc:#8B7CF6"><span class="ic">⚡</span><div class="tt">리액션 랩 — 반응속도 훈련소</div><div class="dd">타이밍 바 · 신호등 반응 · 새 잡기 · N초 만들기 · 색깔 반응 · 1v1 대결 — 터치로 즐기는 6가지 반응속도 게임 (난이도 3단계 · 기록 저장)</div></button>
       </div>
       <div class="hub-sec">AI 자세 분석</div>
       <div class="hub-grid">
@@ -309,8 +316,8 @@ function updateMap(){
   const vb=document.getElementById('viewBtn');
   if(vb) vb.textContent=(mode==='contain')?'꽉 채우기':'전체 보기';
 }
-let viewPref='auto';
-try{ viewPref=localStorage.getItem('mc_view')||'auto'; }catch(e){}
+let viewPref='contain';   // 기본값: 전체 보기 — 카메라 시야 전부(발끝까지) 항상 표시
+try{ viewPref=localStorage.getItem('mc_view')||'contain'; }catch(e){}
 window.addEventListener('resize',updateMap);
 updateMap();
 // 정규화 랜드마크 → 화면픽셀 (전면캠 미러 반영: 화면에 보이는 위치와 일치)
@@ -411,24 +418,14 @@ async function loadModels(){
 async function startCam(){
   if(DEBUG){ camOn=true; updateMap(); return; }
   if(camOn&&video.srcObject) return;
-  const landscape=window.innerWidth>window.innerHeight;
-  // 태블릿 등 화면비가 다른 기기도 전신이 잘 잡히도록 화면 방향에 맞춰 요청 + 불필요한 크롭/줌 방지
-  const wide={ facingMode:facing,
-    width:{ideal:landscape?1920:1080}, height:{ideal:landscape?1080:1920},
-    resizeMode:{ideal:'none'} };
-  let stream;
-  try{ stream=await navigator.mediaDevices.getUserMedia({video:wide,audio:false}); }
-  catch(e){ stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:facing,width:{ideal:1280},height:{ideal:720}},audio:false}); }
+  // 예전(v2.2) 방식으로 복원 — 고해상도/resizeMode/줌 조작이 기기에 따라 시야를 좁혀
+  // 무릎 아래가 잘리는 문제가 있었음. 단순 요청이 전신이 가장 잘 나옴.
+  const stream=await navigator.mediaDevices.getUserMedia({
+    video:{ facingMode:facing, width:{ideal:1280}, height:{ideal:720} }, audio:false });
   video.srcObject=stream;
   video.classList.toggle('rear', facing==='environment');
   await new Promise(r=>video.onloadedmetadata=r);
   await video.play();
-  // 일부 태블릿은 기본 디지털 줌이 걸려 있어 전신이 화면 밖으로 나감 → 지원되면 최소 줌으로 리셋
-  try{
-    const track=stream.getVideoTracks()[0];
-    const caps=track.getCapabilities&&track.getCapabilities();
-    if(caps&&caps.zoom&&caps.zoom.min!=null) await track.applyConstraints({advanced:[{zoom:caps.zoom.min}]});
-  }catch(e){}
   camOn=true; updateMap();
 }
 function stopCam(){
@@ -568,6 +565,9 @@ function bestLabel(k){
   if(k==='sequence2') return '🏆 최고 '+v+'세트';
   if(k==='tissue') return '🏆 최고 '+v+'장';
   if(k==='dodge') return '🏆 최고 '+v+'초';
+  if(k==='mosquito') return '🏆 최고 '+v+'마리';
+  if(k==='board') return '🏆 최고 '+v+'초';
+  if(k==='chop') return '🏆 최고 '+v+'조각';
   return '🏆 최고 '+v+'개';
 }
 function refreshBests(){
@@ -734,7 +734,7 @@ function randPos(r,avoid){
 /* ---------- 두더지 잡기 ---------- */
 ACT.mole=(()=>{
   const G={};
-  const DUR=45;
+  const DUR=60;
   function spawn(){
     const r=Math.max(40,Math.min(map.W,map.H)/8.5);
     const p=randPos(r, G.mole?[{x:G.mole.x,y:G.mole.y,d:r*2.4}]:null);
@@ -742,7 +742,7 @@ ACT.mole=(()=>{
   }
   return {
     key:'mole', hud:{counter:true,timer:true,end:true}, _G:G,
-    intro:{emoji:'👾',title:'두더지 잡기',desc:'화면에 나타나는 녀석을 <b>손으로 쳐서</b> 잡아요!<br>45초 동안 최대한 많이. 연속으로 잡으면 콤보 보너스!'},
+    intro:{emoji:'👾',title:'두더지 잡기',desc:'화면에 나타나는 녀석을 <b>손으로 쳐서</b> 잡아요!<br>60초 동안 최대한 많이. 연속으로 잡으면 콤보 보너스!'},
     start(){ G.score=0; G.combo=0; G.maxCombo=0; G.hits=0; G.miss=0; G.mole=null;
       G.endAt=performance.now()+DUR*1000; G.pop=null; G.boom=null;
       $('repNum').textContent='0'; $('repLbl').textContent='SCORE';
@@ -942,13 +942,13 @@ ACT.sequence=(()=>{
   };
 })();
 
-/* ---------- 스피드 휴지 뽑기 (30초) ---------- */
+/* ---------- 스피드 휴지 뽑기 (60초) ---------- */
 ACT.tissue=(()=>{
   const G={};
-  const DUR=30;
+  const DUR=60;
   return {
     key:'tissue', hud:{counter:true,timer:true,end:true}, _G:G,
-    intro:{emoji:'🧻',title:'스피드 휴지 뽑기',desc:'화면 아래 <b>휴지곽 위에서 손을 위로 휙!</b> 올리면 휴지가 뽑혀 날아가요.<br><b>30초</b> 동안 몇 장이나 뽑을까요? 양손도 가능!'},
+    intro:{emoji:'🧻',title:'스피드 휴지 뽑기',desc:'화면 아래 <b>휴지곽 위에서 손을 위로 휙!</b> 올리면 휴지가 뽑혀 날아가요.<br><b>60초</b> 동안 몇 장이나 뽑을까요? 양손도 가능!'},
     start(){ G.n=0; G.endAt=performance.now()+DUR*1000; G.parts=[]; G.lastPull=0; G.pt=0;
       $('repNum').textContent='0'; $('repLbl').textContent='TISSUES'; $('timerUnit').textContent='SEC'; },
     end(){ this.finish(); },
@@ -1019,10 +1019,10 @@ ACT.tissue=(()=>{
   };
 })();
 
-/* ---------- 뚝딱 망치 (45초) ---------- */
+/* ---------- 뚝딱 망치 (60초) ---------- */
 ACT.hammer=(()=>{
   const G={};
-  const DUR=45, HITS=3;
+  const DUR=60, HITS=3;
   function newNail(avoid){
     const r=Math.max(30,Math.min(map.W,map.H)/11);
     const p=randPos(r*1.3,avoid);
@@ -1030,7 +1030,7 @@ ACT.hammer=(()=>{
   }
   return {
     key:'hammer', hud:{counter:true,timer:true,end:true}, _G:G,
-    intro:{emoji:'🔨',title:'뚝딱 망치질',desc:'못 머리 위로 손을 <b>위에서 아래로 휙!</b> 내리치면 못이 박혀요.<br>세 번 치면 완성 — <b>45초</b> 동안 몇 개나 박을까요?'},
+    intro:{emoji:'🔨',title:'뚝딱 망치질',desc:'못 머리 위로 손을 <b>위에서 아래로 휙!</b> 내리치면 못이 박혀요.<br>세 번 치면 완성 — <b>60초</b> 동안 몇 개나 박을까요?'},
     start(){ G.n=0; G.endAt=performance.now()+DUR*1000;
       const a=newNail(null);
       G.nails=[a,newNail([{x:a.x,y:a.y,d:a.r*3.4}])];
@@ -1101,7 +1101,7 @@ ACT.balloon=(()=>{
   const HUES=['#fb7185','#22d3ee','#a3e635','#f0abfc','#fb923c'];
   return {
     key:'balloon', hud:{counter:true,timer:true,end:true}, _G:G,
-    intro:{emoji:'🎈',title:'풍선 팡팡',desc:'아래에서 <b>풍선이 두둥실</b> 떠올라요. 하늘로 도망가기 전에 손으로 팡!<br>작은 풍선은 점수 UP, <b>★황금 풍선</b>은 대박 보너스! (60초)'},
+    intro:{emoji:'🎈',title:'풍선 팡팡',desc:'풍선이 <b>쌩쌩 빠르게</b> 떠올라요! 도망가기 전에 손으로 팡!<br>지그재그 풍선 조심, <b>놓치면 -5점</b>! ★황금 풍선은 대박 보너스 (60초)'},
     start(){ G.score=0; G.combo=0; G.popped=0; G.missed=0; G.fx=[]; G.bs=[]; G.nextAt=0; G.pt=0;
       G.endAt=performance.now()+DUR*1000;
       $('repNum').textContent='0'; $('repLbl').textContent='SCORE'; $('timerUnit').textContent='SEC'; },
@@ -1121,17 +1121,25 @@ ACT.balloon=(()=>{
       let hands=[];
       if(lms){ drawPose(lms,'#38bdf8'); hands=hands2(lms); drawHandGlow(hands,'#38bdf8'); }
       else setState('몸이 보이게 서 주세요','#fbbf24');
-      if(now>=G.nextAt&&G.bs.length<4){
+      if(now>=G.nextAt&&G.bs.length<6){
         const gold=Math.random()<0.12;
-        const r=gold?30:26+Math.random()*20;
+        const r=gold?30:22+Math.random()*17;
         G.bs.push({x:50+Math.random()*(map.W-100),y:map.H+r+12,r,
-          vy:-(55+Math.random()*55+el*0.7),ph:Math.random()*6,
+          vy:-(95+Math.random()*80+el*1.5),ph:Math.random()*6,
+          zig:Math.random()<0.4,
           col:gold?'#fbbf24':HUES[(Math.random()*HUES.length)|0],gold});
-        G.nextAt=now+Math.max(620,1350-el*11);
+        G.nextAt=now+Math.max(380,950-el*9);
       }
       G.bs=G.bs.filter(b=>{
-        b.y+=b.vy*dt/1000; b.x+=Math.sin(now/700+b.ph)*0.8;
-        if(b.y<-b.r-24){ G.missed++; G.combo=0; setState('앗, 풍선이 도망갔다!','#fb7185'); return false; }
+        b.y+=b.vy*dt/1000;
+        b.x+=Math.sin(now/(b.zig?250:700)+b.ph)*(b.zig?2.6:0.9);
+        if(b.y<-b.r-24){
+          G.missed++; G.combo=0;
+          G.score=Math.max(0,G.score-5);
+          $('repNum').textContent=G.score;
+          setState('놓쳤다! -5점 😱','#fb7185'); beep(200,0.1);
+          return false;
+        }
         ctx.save();
         ctx.shadowBlur=b.gold?24:12; ctx.shadowColor=b.col;
         ctx.fillStyle=hexA(b.col,0.85);
@@ -1174,7 +1182,7 @@ ACT.fruit=(()=>{
   return {
     key:'fruit', hud:{counter:true,timer:true,end:true}, _G:G,
     intro:{emoji:'🍉',title:'과일 베기',desc:'날아오르는 과일을 <b>손을 빠르게 휘둘러</b> 싹둑! 천천히 대면 안 베져요.<br>💣 <b>폭탄은 절대 치면 안 돼요!</b> (-20점, 60초)'},
-    start(){ G.score=0; G.cut=0; G.boomN=0; G.items=[]; G.fx=[]; G.nextAt=0; G.flash=0; G.pt=0;
+    start(){ G.score=0; G.cut=0; G.boomN=0; G.items=[]; G.fx=[]; G.nextAt=0; G.flash=0; G.pt=0; G.slash=null;
       G.endAt=performance.now()+DUR*1000;
       $('repNum').textContent='0'; $('repLbl').textContent='SCORE'; $('timerUnit').textContent='SEC'; },
     end(){ this.finish(); },
@@ -1216,15 +1224,24 @@ ACT.fruit=(()=>{
         if(it.bomb){ ctx.shadowBlur=18; ctx.shadowColor='#fb7185'; }
         ctx.fillText(it.e,0,0); ctx.restore();
         // 베기: 손 속도 800px/s 이상의 스윙이 통과해야 인정
-        if(hands.length&&hands.some(h=>h.spd>800&&segHit(h,it.x,it.y,it.r+14))){
+        const hh=hands.length?hands.find(h=>h.spd>800&&segHit(h,it.x,it.y,it.r+14)):null;
+        if(hh){
+          // 검격 궤적: 실제 스윙 방향으로 슬래시가 번쩍
+          const ang=Math.atan2(hh.y-hh.py,hh.x-hh.px);
+          G.slash={x1:it.x-Math.cos(ang)*it.r*2.4, y1:it.y-Math.sin(ang)*it.r*2.4,
+                   x2:it.x+Math.cos(ang)*it.r*2.4, y2:it.y+Math.sin(ang)*it.r*2.4, t:now};
           if(it.bomb){
             G.boomN++; G.score=Math.max(0,G.score-20); G.flash=now;
             beep(150,0.25,0.35); buzz([0,90,60,90]);
             setState('💣 폭탄! -20점','#fb7185');
           }else{
             G.cut++; G.score+=10;
-            [-1,1].forEach(s=>G.fx.push({x:it.x,y:it.y,vx:it.vx*0.3+s*220,vy:-170,e:it.e,r:it.r*0.6,rot:it.rot,vr:s*4,t:now,kind:'half'}));
-            for(let i=0;i<7;i++) G.fx.push({x:it.x,y:it.y,a:Math.random()*6.28,v:150+Math.random()*250,t:now,kind:'juice'});
+            // 스윙 방향 절단선을 따라 반쪽 두 개가 수직 방향으로 벌어지며 낙하
+            const perp=ang+Math.PI/2;
+            [-1,1].forEach(s=>G.fx.push({x:it.x,y:it.y,
+              vx:it.vx*0.3+Math.cos(perp)*s*180, vy:it.vy*0.2+Math.sin(perp)*s*180-110,
+              e:it.e,r:it.r,rot:it.rot,vr:s*3,slashAng:ang,side:s,t:now,kind:'half'}));
+            for(let i=0;i<8;i++) G.fx.push({x:it.x,y:it.y,a:perp+(Math.random()-0.5)*1.4+(Math.random()<0.5?Math.PI:0),v:150+Math.random()*260,t:now,kind:'juice'});
             beep(860+Math.random()*260,0.07); buzz(24);
             setState(['싹둑!','슉!','나이스 컷!'][G.cut%3],'#4ade80');
           }
@@ -1234,13 +1251,28 @@ ACT.fruit=(()=>{
         }
         return true;
       });
+      // 검격(슬래시) 번쩍 — 잘린 방향 그대로
+      if(G.slash&&now-G.slash.t<240){
+        const al=1-(now-G.slash.t)/240;
+        ctx.save();
+        ctx.strokeStyle='rgba(255,255,255,'+al.toFixed(3)+')'; ctx.lineWidth=1.5+5*al;
+        ctx.shadowBlur=20; ctx.shadowColor='#fff'; ctx.lineCap='round';
+        ctx.beginPath(); ctx.moveTo(G.slash.x1,G.slash.y1); ctx.lineTo(G.slash.x2,G.slash.y2); ctx.stroke();
+        ctx.strokeStyle='rgba(163,230,53,'+(al*0.7).toFixed(3)+')'; ctx.lineWidth=1+2*al;
+        ctx.stroke();
+        ctx.restore();
+      }
       G.fx=G.fx.filter(p=>{
         const age=now-p.t;
         if(p.kind==='half'){
-          if(age>700) return false;
+          if(age>750) return false;
           p.vy+=map.H*1.2*dt/1000; p.x+=p.vx*dt/1000; p.y+=p.vy*dt/1000; p.rot+=p.vr*dt/1000;
-          ctx.save(); ctx.globalAlpha=1-age/700; ctx.translate(p.x,p.y); ctx.rotate(p.rot);
-          ctx.font=Math.round(p.r*1.5)+'px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+          // 절단선 기준 반쪽만 클리핑해 그리기 — 실제로 두 동강 난 것처럼 보임
+          ctx.save(); ctx.globalAlpha=1-age/750;
+          ctx.translate(p.x,p.y); ctx.rotate(p.slashAng);
+          ctx.beginPath(); ctx.rect(-p.r*2.2, p.side<0?-p.r*2.2:0, p.r*4.4, p.r*2.2); ctx.clip();
+          ctx.rotate(p.rot-p.slashAng);
+          ctx.font=Math.round(p.r*1.7)+'px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
           ctx.fillText(p.e,0,0); ctx.restore();
           return true;
         }
@@ -1263,7 +1295,7 @@ ACT.dodge=(()=>{
   const G={};
   return {
     key:'dodge', hud:{counter:true,end:true}, _G:G,
-    intro:{emoji:'☄️',title:'운석 피하기',desc:'하늘에서 <b>운석이 떨어져요!</b> 몸을 좌우로 움직여 피하세요.<br>몸에 닿는 순간 끝 — <b>최대한 오래 버텨요!</b> 갈수록 빨라져요.'},
+    intro:{emoji:'☄️',title:'운석 피하기',desc:'하늘에서 <b>운석이 떨어져요!</b> 몸을 좌우로 움직여 피하세요.<br>시작 3초는 준비 시간! 몸 중심에 닿으면 끝 — <b>최대한 오래 버텨요!</b>'},
     start(){ G.t0=performance.now(); G.ms=[]; G.nextAt=0; G.pt=0; G.near=0; G.over=false;
       $('repNum').textContent='0'; $('repLbl').textContent='SECONDS'; },
     end(){ this.finish(); },
@@ -1284,17 +1316,19 @@ ACT.dodge=(()=>{
         drawPose(lms,'#f97316');
         const c11=toPx(lms[11]),c12=toPx(lms[12]),c23=toPx(lms[23]),c24=toPx(lms[24]);
         const cx2=(c11.x+c12.x+c23.x+c24.x)/4, cy2=(c11.y+c12.y+c23.y+c24.y)/4;
-        const rad=Math.max(46,Math.min(150,Math.hypot((c11.x+c12.x)/2-(c23.x+c24.x)/2,(c11.y+c12.y)/2-(c23.y+c24.y)/2)*0.8));
+        // 히트박스: 몸통 중심의 작은 원(기존엔 몸 전체를 덮어 피할 수 없었음)
+        const rad=Math.max(34,Math.min(80,Math.hypot((c11.x+c12.x)/2-(c23.x+c24.x)/2,(c11.y+c12.y)/2-(c23.y+c24.y)/2)*0.45));
         bodyC={x:cx2,y:cy2,r:rad};
         ctx.save(); ctx.setLineDash([10,8]); ctx.strokeStyle='rgba(249,115,22,.55)'; ctx.lineWidth=2.5;
         ctx.shadowBlur=10; ctx.shadowColor='#f97316';
         ctx.beginPath(); ctx.arc(bodyC.x,bodyC.y,bodyC.r,0,Math.PI*2); ctx.stroke(); ctx.restore();
       }else{ setState('몸이 보여야 피할 수 있어요! (일시정지)','#fbbf24'); return; }
-      if(now>=G.nextAt){
+      const grace=el<3;                              // 시작 3초 무적(준비 시간)
+      if(now>=G.nextAt&&!grace){
         const r=24+Math.random()*16;
         G.ms.push({x:r+Math.random()*(map.W-2*r),y:-r-24,r,
-          vy:map.H*(0.30+el*0.011),rot:Math.random()*6,vr:(Math.random()-0.5)*4});
-        G.nextAt=now+Math.max(360,950-el*10);
+          vy:map.H*(0.18+el*0.004),rot:Math.random()*6,vr:(Math.random()-0.5)*4});
+        G.nextAt=now+Math.max(650,1400-el*7);
       }
       let dead=false;
       G.ms=G.ms.filter(mt=>{
@@ -1304,15 +1338,300 @@ ACT.dodge=(()=>{
         ctx.font=Math.round(mt.r*1.8)+'px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
         ctx.shadowBlur=14; ctx.shadowColor='#f97316';
         ctx.fillText('☄️',0,0); ctx.restore();
-        if(bodyC){
+        if(bodyC&&!grace){
           const d=Math.hypot(mt.x-bodyC.x,mt.y-bodyC.y);
-          if(d<bodyC.r+mt.r*0.55) dead=true;
-          else if(d<bodyC.r+mt.r*0.55+48&&!mt.nearDone){ mt.nearDone=true; G.near++; setState('아슬아슬! 😱','#fbbf24'); }
+          if(d<bodyC.r+mt.r*0.4) dead=true;
+          else if(d<bodyC.r+mt.r*0.4+52&&!mt.nearDone){ mt.nearDone=true; G.near++; setState('아슬아슬! 😱','#fbbf24'); }
         }
         return true;
       });
       if(dead){ beep(160,0.3,0.35); buzz([0,120,60,120]); this.finish(); return; }
-      if(el<3) setState('좌우로 움직여 피해요!','#f97316');
+      if(grace) setState('준비! '+Math.ceil(3-el)+'초 뒤 시작 — 좌우로 피해요!','#f97316');
+    }
+  };
+})();
+
+/* ---------- 모기 잡기 (박수, 60초) ---------- */
+ACT.mosquito=(()=>{
+  const G={};
+  const DUR=60;
+  return {
+    key:'mosquito', hud:{counter:true,timer:true,end:true}, _G:G,
+    intro:{emoji:'🦟',title:'모기 잡기',desc:'앵~ 모기가 요리조리 날아다녀요.<br><b>모기 근처에서 두 손을 짝!</b> 마주치면(박수) 잡혀요.<br>60초 동안 몇 마리나 잡을까요?'},
+    start(){ G.n=0; G.claps=0; G.endAt=performance.now()+DUR*1000; G.pt=0;
+      G.mq=null; G.respawnAt=0; G.lastClap=0; G.prevGap=null; G.boom=null; G.buzzAt=0;
+      $('repNum').textContent='0'; $('repLbl').textContent='CATCH'; $('timerUnit').textContent='SEC'; },
+    end(){ this.finish(); },
+    finish(){
+      const prev=+(best.get('mosquito')||0); if(G.n>prev) best.set('mosquito',G.n);
+      const acc=G.claps?Math.round(G.n/G.claps*100):0;
+      showResult({num:G.n,sub:'마리 잡았어요!'+(G.n>prev&&G.n>0?' 🏆 기록 경신!':''),
+        detail:'박수 <span class="nb">'+G.claps+'</span>번 · 명중률 <span class="nb">'+acc+'%</span>'
+          +(G.n>=20?'<br>모기 헌터 등극! 🦟💥':'')});
+    },
+    _spawn(){
+      const m2=Math.min(map.W,map.H);
+      G.mq={x:50+Math.random()*(map.W-100), y:map.H*0.12+Math.random()*map.H*0.45,
+        tx:map.W/2,ty:map.H*0.3,retarget:0,spd:m2*(0.35+Math.random()*0.2)};
+    },
+    frame(lms){
+      const now=performance.now();
+      const remain=Math.max(0,(G.endAt-now)/1000);
+      $('timerVal').textContent=Math.ceil(remain);
+      if(remain<=0){ this.finish(); return; }
+      const el=DUR-remain;
+      const dt=Math.min(50,now-(G.pt||now)); G.pt=now;
+      let hands=[];
+      if(lms){ drawPose(lms,'#a3e635'); hands=hands2(lms); drawHandGlow(hands,'#a3e635'); }
+      else setState('몸이 보이게 서 주세요','#fbbf24');
+      if(!G.mq&&now>=G.respawnAt) this._spawn();
+      if(G.mq){
+        const q=G.mq;
+        // 목표 지점을 계속 갈아끼우며 요리조리 비행
+        if(now>=q.retarget){
+          q.tx=50+Math.random()*(map.W-100);
+          q.ty=map.H*0.10+Math.random()*map.H*0.5;
+          q.retarget=now+450+Math.random()*700;
+        }
+        const dx=q.tx-q.x, dy=q.ty-q.y, dd=Math.hypot(dx,dy)||1;
+        const sp=q.spd*(1+el*0.012);
+        q.x+=dx/dd*sp*dt/1000+Math.sin(now/85)*1.7;
+        q.y+=dy/dd*sp*dt/1000+Math.cos(now/105)*1.7;
+        ctx.save(); ctx.translate(q.x,q.y);
+        ctx.rotate(Math.sin(now/110)*0.28);
+        ctx.font=Math.max(30,Math.min(map.W,map.H)/11)+'px sans-serif';
+        ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.shadowBlur=10; ctx.shadowColor='#a3e635';
+        ctx.fillText('🦟',0,0); ctx.restore();
+        if(now>=G.buzzAt){ beep(880+Math.random()*350,0.045,0.06); G.buzzAt=now+140+Math.random()*260; }
+        // 박수 판정: 두 손이 빠르게 모임(닫히는 속도) + 손 중점이 모기 근처
+        if(hands.length===2){
+          const gap=Math.hypot(hands[0].x-hands[1].x,hands[0].y-hands[1].y);
+          const m2=Math.min(map.W,map.H);
+          if(G.prevGap!=null){
+            const closing=(G.prevGap-gap)/Math.max(16,dt)*1000;   // px/s
+            if(gap<m2/6&&closing>m2*0.9&&now-G.lastClap>420){
+              G.lastClap=now; G.claps++;
+              const mx=(hands[0].x+hands[1].x)/2, my=(hands[0].y+hands[1].y)/2;
+              if(Math.hypot(mx-q.x,my-q.y)<m2/4.5){
+                G.n++;
+                const n=$('repNum'); n.textContent=G.n;
+                n.classList.remove('pop'); void n.offsetWidth; n.classList.add('pop');
+                G.boom={x:q.x,y:q.y,t:now};
+                beep(1050,0.08); buzz(40);
+                setState(['짝! 잡았다!','명중! 🦟💥','박수 원샷!'][G.n%3],'#a3e635');
+                G.mq=null; G.respawnAt=now+450;
+              }else{
+                beep(300,0.07); setState('헛박수! 모기 가까이에서 짝!','#fbbf24');
+              }
+            }
+          }
+          G.prevGap=gap;
+        } else G.prevGap=null;
+      }
+      if(G.boom&&now-G.boom.t<420){
+        const ba=1-(now-G.boom.t)/420;
+        ctx.save(); ctx.globalAlpha=ba;
+        ctx.font=Math.round(44+(1-ba)*50)+'px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText('💥',G.boom.x,G.boom.y); ctx.restore();
+      }
+    }
+  };
+})();
+
+/* ---------- 칠판 지우기 (타임어택) ---------- */
+ACT.board=(()=>{
+  const G={};
+  const CELL=42;
+  function scribble(g,W,H){
+    const M={x:W*0.07,y:H*0.10,w:W*0.86,h:H*0.66};
+    const cols=['rgba(255,255,255,.85)','rgba(253,224,71,.8)','rgba(244,114,182,.75)','rgba(147,197,253,.8)'];
+    g.lineCap='round';
+    for(let i=0;i<26;i++){          // 마구 그은 낙서 선
+      g.strokeStyle=cols[i%cols.length];
+      g.lineWidth=6+Math.random()*9;
+      g.beginPath();
+      let x=M.x+Math.random()*M.w, y=M.y+Math.random()*M.h;
+      g.moveTo(x,y);
+      const segs=3+(Math.random()*4|0);
+      for(let s2=0;s2<segs;s2++){
+        const nx=Math.max(M.x,Math.min(M.x+M.w,x+(Math.random()-0.5)*W*0.45));
+        const ny=Math.max(M.y,Math.min(M.y+M.h,y+(Math.random()-0.5)*H*0.3));
+        g.quadraticCurveTo((x+nx)/2+(Math.random()-0.5)*60,(y+ny)/2+(Math.random()-0.5)*60,nx,ny);
+        x=nx; y=ny;
+      }
+      g.stroke();
+    }
+    for(let i=0;i<8;i++){           // 동그라미 낙서
+      g.strokeStyle=cols[(Math.random()*cols.length)|0];
+      g.lineWidth=5+Math.random()*6;
+      g.beginPath();
+      g.ellipse(M.x+Math.random()*M.w,M.y+Math.random()*M.h,20+Math.random()*46,14+Math.random()*30,Math.random()*3,0,Math.PI*2);
+      g.stroke();
+    }
+    return M;
+  }
+  return {
+    key:'board', hud:{counter:true,timer:true,end:true}, _G:G,
+    intro:{emoji:'🧽',title:'칠판 지우기',desc:'앗, 칠판이 낙서로 엉망!<br><b>손바닥을 크게 휘저어</b> 낙서를 싹싹 지워요.<br>얼마나 빨리 다 지울 수 있을까요? ⏱ 타임어택!'},
+    start(){
+      G.t0=performance.now(); G.done=false;
+      G.bc=document.createElement('canvas'); G.bc.width=map.W; G.bc.height=map.H;
+      G.bg=G.bc.getContext('2d');
+      const M=scribble(G.bg,map.W,map.H);
+      G.cells=[]; G.cols=Math.ceil(map.W/CELL); G.rows=Math.ceil(map.H/CELL);
+      for(let r2=0;r2<G.rows;r2++) for(let c2=0;c2<G.cols;c2++){
+        const cx2=c2*CELL+CELL/2, cy2=r2*CELL+CELL/2;
+        if(cx2>M.x&&cx2<M.x+M.w&&cy2>M.y&&cy2<M.y+M.h) G.cells.push({x:cx2,y:cy2,clean:false});
+      }
+      G.total=G.cells.length; G.cleanN=0;
+      $('repNum').textContent='0'; $('repLbl').textContent='% CLEAN'; $('timerUnit').textContent='SEC';
+    },
+    end(){ this.finish(true); },
+    finish(dnf){
+      if(G.done) return; G.done=true;
+      const sec=(performance.now()-G.t0)/1000;
+      const pct=G.total?Math.round(G.cleanN/G.total*100):0;
+      if(!dnf){
+        const prev=+(best.get('board')||99999);
+        if(sec<prev) best.set('board',sec.toFixed(1));
+        showResult({num:sec.toFixed(1),sub:'초 만에 클리어! 🧽'+(sec<prev?' 🏆 기록 경신!':''),
+          detail:sec<20?'번개 지우개! ⚡':sec<35?'선생님이 좋아하시겠어요!':'다음엔 팔을 더 크게 휘둘러요!'});
+      }else{
+        showResult({num:pct,sub:'% 지웠어요',detail:'끝까지 다 지우면 기록이 남아요!'});
+      }
+    },
+    frame(lms){
+      const now=performance.now();
+      if(G.done) return;
+      const sec=(now-G.t0)/1000;
+      $('timerVal').textContent=sec.toFixed(1);
+      let hands=[];
+      if(lms){ drawPose(lms,'#4ade80'); hands=hands2(lms); }
+      else setState('몸이 보이게 서 주세요','#fbbf24');
+      const R=Math.max(44,Math.min(map.W,map.H)/8);
+      // 손 경로를 따라 지우기(오프스크린 캔버스에 destination-out)
+      if(hands.length){
+        G.bg.save(); G.bg.globalCompositeOperation='destination-out';
+        G.bg.fillStyle='#000';
+        hands.forEach(h=>{
+          const steps=Math.max(1,Math.ceil(Math.hypot(h.x-h.px,h.y-h.py)/(R*0.5)));
+          for(let s2=0;s2<=steps;s2++){
+            const x=h.px+(h.x-h.px)*s2/steps, y=h.py+(h.y-h.py)*s2/steps;
+            G.bg.beginPath(); G.bg.arc(x,y,R,0,Math.PI*2); G.bg.fill();
+            G.cells.forEach(cell=>{
+              if(!cell.clean&&Math.hypot(cell.x-x,cell.y-y)<R){ cell.clean=true; G.cleanN++; }
+            });
+          }
+        });
+        G.bg.restore();
+      }
+      // 칠판 틴트 + 남은 낙서 + 지우개 표시
+      ctx.fillStyle='rgba(16,64,43,.42)'; ctx.fillRect(0,0,map.W,map.H);
+      ctx.drawImage(G.bc,0,0);
+      hands.forEach(h=>{
+        ctx.save(); ctx.translate(h.x,h.y); ctx.rotate(-0.35);
+        ctx.shadowBlur=12; ctx.shadowColor='rgba(255,255,255,.5)';
+        ctx.fillStyle='#d9c9a3'; rrCtx(-R*0.55,-R*0.32,R*1.1,R*0.64,10); ctx.fill();
+        ctx.fillStyle='#5a4632'; rrCtx(-R*0.55,-R*0.32,R*1.1,R*0.2,8); ctx.fill();
+        ctx.restore();
+      });
+      const pct=G.total?Math.round(G.cleanN/G.total*100):0;
+      $('repNum').textContent=pct;
+      if(pct>=97){ beep(880,0.2); buzz([0,60,50,60]); this.finish(false); return; }
+      setState(pct<5?'낙서를 손으로 문질러 지워요!':(pct<60?'좋아요, 싹싹 문질러요! '+pct+'%':'거의 다 됐어요! 구석구석!'),'#4ade80');
+    }
+  };
+})();
+
+/* ---------- 도마 칼질 (60초 채썰기) ---------- */
+ACT.chop=(()=>{
+  const G={};
+  const DUR=60;
+  const VEGS=[
+    {name:'오이',body:'#4d9e3f',skin:'#2f7327',flesh:'#d7f0c0'},
+    {name:'당근',body:'#f2842b',skin:'#d96a12',flesh:'#ffd9ad'},
+    {name:'무',  body:'#eef3e6',skin:'#a8cf8e',flesh:'#ffffff'}
+  ];
+  const SLICES=10;
+  function newVeg(){
+    const v=VEGS[G.vegN%VEGS.length]; G.vegN++;
+    G.veg={name:v.name,body:v.body,skin:v.skin,flesh:v.flesh,left:SLICES};
+  }
+  return {
+    key:'chop', hud:{counter:true,timer:true,end:true}, _G:G,
+    intro:{emoji:'🔪',title:'도마 칼질',desc:'도마 위 채소를 <b>손날로 위에서 아래로 탁탁탁!</b><br>내리칠 때마다 한 조각씩 채썰어져요. 다 썰면 다음 채소!<br>60초 동안 몇 조각이나 썰까요?'},
+    start(){ G.n=0; G.vegN=0; G.endAt=performance.now()+DUR*1000; G.pt=0;
+      G.pieces=[]; G.lastChop=0; G.flash=null; newVeg();
+      $('repNum').textContent='0'; $('repLbl').textContent='SLICES'; $('timerUnit').textContent='SEC'; },
+    end(){ this.finish(); },
+    finish(){
+      const prev=+(best.get('chop')||0); if(G.n>prev) best.set('chop',G.n);
+      showResult({num:G.n,sub:'조각 썰었어요! 🔪'+(G.n>prev&&G.n>0?' 🏆 기록 경신!':''),
+        detail:G.n>=40?'주방장 등극! 👨‍🍳':G.n>=25?'채썰기 달인!':'손날을 위에서 아래로 빠르게!'});
+    },
+    frame(lms){
+      const now=performance.now();
+      const remain=Math.max(0,(G.endAt-now)/1000);
+      $('timerVal').textContent=Math.ceil(remain);
+      if(remain<=0){ this.finish(); return; }
+      const dt=Math.min(50,now-(G.pt||now)); G.pt=now;
+      let hands=[];
+      if(lms){ drawPose(lms,'#f59e0b'); hands=hands2(lms); drawHandGlow(hands,'#f59e0b'); }
+      else setState('몸이 보이게 서 주세요','#fbbf24');
+      // 도마
+      const bw=Math.min(map.W*0.8,460), bh=Math.max(46,bw*0.14);
+      const bx=map.W/2, by=map.H*0.72;
+      ctx.save();
+      ctx.fillStyle='#9a6b3f'; rrCtx(bx-bw/2,by,bw,bh,14); ctx.fill();
+      ctx.fillStyle='#7c5430'; rrCtx(bx-bw/2,by+bh-10,bw,10,6); ctx.fill();
+      // 남은 채소
+      const v=G.veg;
+      const fullL=bw*0.8, vh=Math.max(30,bh*0.72);
+      const remL=fullL*(v.left/SLICES);
+      const vx0=bx-fullL/2, vy0=by-vh+6;
+      if(v.left>0){
+        ctx.fillStyle=v.skin; rrCtx(vx0,vy0,remL,vh,vh/2); ctx.fill();
+        ctx.fillStyle=v.body; rrCtx(vx0+3,vy0+3,Math.max(6,remL-6),vh-6,(vh-6)/2); ctx.fill();
+        ctx.fillStyle=v.flesh;                                   // 썰린 단면
+        ctx.beginPath(); ctx.ellipse(vx0+remL-2,vy0+vh/2,7,vh/2-3,0,0,Math.PI*2); ctx.fill();
+      }
+      ctx.restore();
+      // 판정: 남은 채소 위로 빠르게 내리치는 손날
+      if(v.left>0&&hands.length&&now-G.lastChop>190){
+        const hit=hands.find(h=>h.vy>550&&segHit(h,Math.max(vx0+16,Math.min(vx0+remL-8,h.x)),vy0+vh/2,vh+30));
+        if(hit){
+          G.lastChop=now; G.n++; v.left--;
+          const px2=vx0+fullL*(v.left/SLICES)+fullL/SLICES/2;
+          G.pieces.push({x:px2,y:vy0+vh/2,vx:70+Math.random()*130,vy:-(260+Math.random()*170),
+            rot:0,vr:3+Math.random()*4,w:fullL/SLICES*0.72,h:vh*0.9,col:v.flesh,edge:v.skin,t:now});
+          if(G.pieces.length>24) G.pieces.shift();
+          G.flash={x:px2,t:now,y0:vy0-34,y1:vy0+vh+14};
+          const n=$('repNum'); n.textContent=G.n;
+          n.classList.remove('pop'); void n.offsetWidth; n.classList.add('pop');
+          beep(190+Math.random()*60,0.05,0.32); buzz(20);
+          if(v.left<=0){ setState(v.name+' 완료! 다음 채소! 🎉','#a3e635'); beep(880,0.14); newVeg(); }
+          else setState(['탁!','탁탁!','샥!'][G.n%3],'#f59e0b');
+        }
+      }
+      // 썰린 조각 파티클
+      G.pieces=G.pieces.filter(p=>{
+        const age=now-p.t; if(age>900) return false;
+        p.vy+=map.H*1.3*dt/1000; p.x+=p.vx*dt/1000; p.y+=p.vy*dt/1000; p.rot+=p.vr*dt/1000;
+        ctx.save(); ctx.globalAlpha=Math.min(1,2-age/450); ctx.translate(p.x,p.y); ctx.rotate(p.rot);
+        ctx.fillStyle=p.edge; rrCtx(-p.w/2,-p.h/2,p.w,p.h,6); ctx.fill();
+        ctx.fillStyle=p.col; rrCtx(-p.w/2+2,-p.h/2+2,p.w-4,p.h-4,4); ctx.fill();
+        ctx.restore();
+        return true;
+      });
+      // 칼질 플래시
+      if(G.flash&&now-G.flash.t<160){
+        const al=1-(now-G.flash.t)/160;
+        ctx.strokeStyle='rgba(255,255,255,'+al.toFixed(3)+')'; ctx.lineWidth=4;
+        ctx.shadowBlur=14; ctx.shadowColor='#fff';
+        ctx.beginPath(); ctx.moveTo(G.flash.x,G.flash.y0); ctx.lineTo(G.flash.x,G.flash.y1); ctx.stroke();
+        ctx.shadowBlur=0;
+      }
     }
   };
 })();
@@ -1956,7 +2275,9 @@ function goHub(){
 }
 
 /* ---------- 이벤트 ---------- */
-document.querySelectorAll('.hcard').forEach(b=>b.addEventListener('click',()=>{ initAudio(); openIntro(b.dataset.ex); }));
+document.querySelectorAll('.hcard[data-ex]').forEach(b=>b.addEventListener('click',()=>{ initAudio(); openIntro(b.dataset.ex); }));
+const rlCard=$('reactionLabCard');
+if(rlCard) rlCard.addEventListener('click',()=>{ location.href='./reaction-lab.html'; });
 $('introBack').onclick=goHub;
 $('introStart').onclick=startActivity;
 $('menuBtn').onclick=()=>{ if(current&&current.key==='posture'){ goHub(); return; }
