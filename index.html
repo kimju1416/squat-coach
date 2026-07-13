@@ -181,6 +181,20 @@
   /* 내 기록 보관함 */
   #recScr{display:none;position:absolute;inset:0;z-index:24;background:#050b18;overflow-y:auto;-webkit-overflow-scrolling:touch;}
   #recScr.show{display:block;}
+  /* 챌린지 */
+  .ch-card{background:linear-gradient(135deg,rgba(255,209,102,.14),rgba(255,138,61,.08));}
+  #chRestScr{display:none;position:absolute;inset:0;z-index:25;background:#050b18;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+  #chRestScr.show{display:flex;align-items:center;justify-content:center;}
+  .ch-in{max-width:420px;margin:0 auto;padding:30px 20px 40px;text-align:center;}
+  .ch-prog{font-size:12px;font-weight:800;letter-spacing:3px;color:#5f7ea0;}
+  .ch-num{font-size:min(24vw,88px);font-weight:900;line-height:1;margin:14px 0;color:#ffd166;
+    text-shadow:0 0 30px rgba(255,209,102,.4);font-variant-numeric:tabular-nums;}
+  .ch-restlbl{color:#93a9c8;font-size:13.5px;margin-bottom:26px;}
+  .ch-next{display:inline-flex;flex-direction:column;align-items:center;gap:10px;background:rgba(255,255,255,.045);
+    border:1px solid rgba(148,163,184,.22);border-radius:18px;padding:20px 26px;}
+  .ch-next .ic{width:44px;height:44px;color:#22d3ee;}
+  .ch-next .ic svg{width:100%;height:100%;}
+  .ch-next b{font-size:16px;}
   /* 리포트 이미지 저장 미리보기 모달 */
   #imgModal{display:none;position:fixed;inset:0;z-index:60;background:rgba(2,6,15,.97);overflow-y:auto;-webkit-overflow-scrolling:touch;padding:22px 16px 40px;}
   #imgModal.show{display:block;}
@@ -237,6 +251,10 @@
     <div class="hub-in">
       <h1>AI 모션 트레이닝 센터</h1>
       <div class="hub-sub">카메라가 몸의 관절을 인식해요.<br>폰을 세워두고 <b style="color:#a5f3fc">2~3걸음 뒤로</b> 물러나 전신이 보이게 해 주세요.</div>
+      <div class="hub-sec">🏆 오늘의 챌린지</div>
+      <div class="hub-grid">
+        <button class="hcard wide ch-card" id="challengeCard" style="--c:rgba(255,209,102,.6);--tc:#ffd166"><span class="ic"></span><div class="tt">전체 챌린지 — 16개 활동 완주</div><div class="dd">스쿼트부터 자세분석까지 순서대로 한 번씩! 활동 사이 60초 휴식, 버튼 하나로 쭉 이어져요 (약 25~30분)</div></button>
+      </div>
       <div class="hub-sec">운동 카운터</div>
       <div class="hub-grid">
         <button class="hcard" data-ex="squat" style="--c:rgba(34,211,238,.5);--tc:#22d3ee"><span class="ic">🏋️</span><div class="tt">스쿼트</div><div class="dd">깊이 앉았다 일어나면 자동으로 1회</div><div class="bst" data-best="squat"></div></button>
@@ -308,6 +326,23 @@
 
   <!-- 내 기록 보관함 -->
   <div id="recScr"><div class="rp-in" id="recBody"></div></div>
+
+  <!-- 챌린지 휴식 화면 -->
+  <div id="chRestScr">
+    <div class="ch-in">
+      <div class="ch-prog" id="chProgress">챌린지 0 / 16 완료</div>
+      <div class="ch-num" id="chRestNum">60</div>
+      <div class="ch-restlbl">휴식 중 — 물 한 모금 마시고 숨 고르세요</div>
+      <div class="ch-next">
+        <span class="ic" id="chNextIcon"></span>
+        <b id="chNextTitle"></b>
+      </div>
+      <div class="btn-row" style="margin-top:26px">
+        <button class="cta" id="chSkipRest">지금 바로 시작 →</button>
+      </div>
+      <button class="ghost" id="chAbort" style="margin-top:14px;opacity:.65">챌린지 중단하고 메뉴로</button>
+    </div>
+  </div>
 
   <!-- 리포트 이미지 저장 미리보기 -->
   <div id="imgModal"><div class="im-in">
@@ -1028,8 +1063,9 @@ function show(id){
   scrs.forEach(s=>$(s).classList.toggle('show',s===id));
   $('reportScr').classList.remove('show');
   $('recScr').classList.remove('show');
+  $('chRestScr').classList.remove('show');
 }
-function hideAll(){ scrs.forEach(s=>$(s).classList.remove('show')); $('reportScr').classList.remove('show'); $('recScr').classList.remove('show'); }
+function hideAll(){ scrs.forEach(s=>$(s).classList.remove('show')); $('reportScr').classList.remove('show'); $('recScr').classList.remove('show'); $('chRestScr').classList.remove('show'); }
 function setHud(on,opt){
   opt=opt||{};
   $('hudTop').classList.toggle('show',on);
@@ -1126,12 +1162,14 @@ const ACT={};
 
 /* ---------- 공통: 카운터형(스쿼트·팔벌려뛰기) 상태 ---------- */
 function makeCounter(cfg){
-  const S={reps:0,lastRepAt:0,lostFrames:0};
+  const S={reps:0,lastRepAt:0,lostFrames:0,endAt:0};
   return {
     key:cfg.key, hud:{counter:true,reset:true,end:true,depth:!!cfg.depth},
     label:cfg.label,
     start(){ S.reps=0; S.lastRepAt=0; S.lostFrames=0; cfg.reset(S);
-      $('repNum').textContent='0'; $('repLbl').textContent=cfg.label; },
+      S.endAt=CH?performance.now()+45*1000:0;
+      $('repNum').textContent='0'; $('repLbl').textContent=cfg.label;
+      $('timerUnit').textContent='SEC'; },
     reset(){ S.reps=0; S.lastRepAt=0; cfg.reset(S); $('repNum').textContent='0'; },
     end(){
       const r=S.reps, prev=+(best.get(cfg.key)||0);
@@ -1139,6 +1177,11 @@ function makeCounter(cfg){
       showResult({num:r,sub:'개 완료했어요',detail:r>prev?'🏆 최고 기록 경신!':''});
     },
     frame(lms){
+      if(S.endAt){
+        const remain=Math.max(0,(S.endAt-performance.now())/1000);
+        $('timerVal').textContent=Math.ceil(remain);
+        if(remain<=0){ this.end(); return; }
+      }
       if(!lms){ S.lostFrames++; if(S.lostFrames>45) cfg.reset(S);
         setState('전신이 보이게 뒤로 물러나 주세요','#94c9dd'); return; }
       // 사람 존재: 어깨·엉덩이 중심 가시성
@@ -2176,6 +2219,7 @@ ACT.board=(()=>{
       if(G.done) return;
       const sec=(now-G.t0)/1000;
       $('timerVal').textContent=sec.toFixed(1);
+      if(CH&&sec>=45){ this.finish(true); return; }   // 챌린지 중엔 45초 제한
       // 판 사이 전환 연출
       if(G.betweenUntil>now){
         if(lms) drawPose(lms,'#4ade80');
@@ -2974,6 +3018,7 @@ ACT.posture=(()=>{
     G.rxKeys=rxKeys;
     G.score=calcScore(all);
     G.band=G.score>=90?['A','훌륭해요!','#a3e635']:G.score>=80?['B','좋아요, 조금만 다듬어요','#22d3ee']:G.score>=70?['C','몇 가지 관리가 필요해요','#fbbf24']:['D','꾸준한 관리가 필요해요','#fb7185'];
+    if(CH) CH.results.push({key:'posture',label:'자세 분석',num:G.score,sub:'점 · '+G.band[0]+'등급'});
     const tiltUsed=G.rolls&&G.rolls.length>0;
     G.tiltNote=tiltUsed?('기기 수평 확인됨 (평균 '+(G.rolls.reduce((x,y)=>x+y,0)/G.rolls.length).toFixed(1)+'°)'):'수평 센서 미지원 기기';
     G.type=classifyType(G.frontM,G.sideM);
@@ -3027,15 +3072,21 @@ ACT.posture=(()=>{
     rxKeys.forEach(k=>{
       const r=RX[k];
       h+='<div class="rx-card"><div class="rt"><span>'+r.ic+'</span>'+r.nm+'</div><div class="rh">'+r.how+'</div><div class="rd">📌 '+r.dose+'</div>'
-        +(r.go?'<button class="rx-go" data-go="'+r.go+'">▶ 지금 바로 하기</button>':'')+'</div>';
+        +(r.go&&!CH?'<button class="rx-go" data-go="'+r.go+'">▶ 지금 바로 하기</button>':'')+'</div>';
     });
     h+='<div class="rp-warn">⚠️ 이 결과는 카메라 기반 <b>참고용 자세 스크리닝</b>이며 의학적 진단이 아니에요. 옷 모양·서 있는 위치에 따라 수치가 달라질 수 있어요. 통증이 있거나 수치가 계속 크게 나오면 보건 선생님 또는 병원과 상담하세요.'
       +(tiltUsed?'':'<br>📐 이 기기는 수평 센서를 지원하지 않아 폰 기울기 확인 없이 측정됐어요. 폰을 벽에 기대 최대한 수직·수평으로 세우고 측정하면 더 정확해요.')+'</div>';
-    h+='<div class="rp-btns"><button class="ghost" id="rpMenu">메뉴로</button><button class="ghost" id="rpSave">📸 이미지 저장</button><button class="cta" id="rpAgain">다시 측정</button></div>';
+    h+=CH
+      ?'<div class="rp-btns"><button class="cta" id="rpMenu">🏆 챌린지 결과 보기</button></div>'
+      :'<div class="rp-btns"><button class="ghost" id="rpMenu">메뉴로</button><button class="ghost" id="rpSave">📸 이미지 저장</button><button class="cta" id="rpAgain">다시 측정</button></div>';
     $('reportBody').innerHTML=h;
-    $('rpSave').onclick=saveReportImage;
-    $('rpMenu').onclick=()=>{ $('reportScr').classList.remove('show'); goHub(); };
-    $('rpAgain').onclick=()=>{ $('reportScr').classList.remove('show'); openIntro('posture'); };
+    if(CH){
+      $('rpMenu').onclick=()=>{ $('reportScr').classList.remove('show'); finishChallenge(); };
+    }else{
+      $('rpSave').onclick=saveReportImage;
+      $('rpMenu').onclick=()=>{ $('reportScr').classList.remove('show'); goHub(); };
+      $('rpAgain').onclick=()=>{ $('reportScr').classList.remove('show'); openIntro('posture'); };
+    }
     document.querySelectorAll('.rx-go').forEach(b=>b.onclick=()=>{ $('reportScr').classList.remove('show'); openIntro(b.dataset.go); });
     hideAll(); running=false; current=null; setHud(false);
     $('reportScr').classList.add('show'); $('reportScr').scrollTop=0;
@@ -3229,7 +3280,7 @@ async function startActivity(){
   }
   hideAll();
   $('hudName').textContent=a.intro.title;
-  setHud(true,a.hud);
+  setHud(true,(CH&&(a.key==='squat'||a.key==='jacks'))?{...a.hud,timer:true}:a.hud);
   keepAwake();
   handTrack={L:null,R:null};
   current=a; a.start();
@@ -3241,17 +3292,24 @@ function showResult(o){
   running=false; setHud(false); current=null;
   SFX.mosqBuzz.stop();
   if(o.num!=null&&curKey) logPlay(curKey,o.num);   // 점수 자동 저장(내 기록)
+  refreshBests();
+  if(CH){
+    CH.results.push({key:curKey,label:(ACT[curKey].intro&&ACT[curKey].intro.title)||curKey,num:o.num,sub:o.sub||''});
+    CH.idx++;
+    startChallengeRest();
+    return;
+  }
   $('resNum').textContent=o.num;
   $('resSub').innerHTML=o.sub||'';
   $('resDetail').innerHTML=o.detail||'';
   show('resultScr');
   beep(880,0.3); buzz([0,80,50,80]);
-  refreshBests();
 }
 function goHub(){
   running=false; current=null; setHud(false);
   SFX.mosqBuzz.stop();
   ctx.clearRect(0,0,canvas.width,canvas.height);
+  if(CH){ clearInterval(CH.timer); CH=null; }
   refreshBests();
   show('hubScr');
 }
@@ -3336,10 +3394,15 @@ const HUBICON={
     +'<circle cx="24" cy="11" r="3.2"/><path d="M17.5,18 H30.5 M24,18 V27.5 M19.5,27.5 H28.5"/>'
     +'<path d="M17.5,18 L15.5,26 M30.5,18 L32.5,26 M19.5,27.5 L18.5,39 M28.5,27.5 L29.5,39"/>'
     +'<path d="M8,22.5 H40" opacity=".45" stroke-dasharray="3 3" stroke-width="1.6"/>'
-    +DOT(17.5,18,1.5)+DOT(30.5,18,1.5)+DOT(24,18,1.5)+DOT(19.5,27.5,1.5)+DOT(28.5,27.5,1.5)+DOT(15.5,26,1.5)+DOT(32.5,26,1.5)+DOT(18.5,39,1.5)+DOT(29.5,39,1.5)+'</svg>'
+    +DOT(17.5,18,1.5)+DOT(30.5,18,1.5)+DOT(24,18,1.5)+DOT(19.5,27.5,1.5)+DOT(28.5,27.5,1.5)+DOT(15.5,26,1.5)+DOT(32.5,26,1.5)+DOT(18.5,39,1.5)+DOT(29.5,39,1.5)+'</svg>',
+  challenge:SV+'<path d="M15,8 H33 V17 A9,9 0 0 1 15,17 Z"/>'
+    +'<path d="M15,10 H8.5 A4.5,4.5 0 0 0 14,15.5"/>'
+    +'<path d="M33,10 H39.5 A4.5,4.5 0 0 0 34,15.5"/>'
+    +'<path d="M24,25.5 V31"/><path d="M17,31 H31 L29.5,39 H18.5 Z"/>'
+    +DOT(24,13,1.6)+'</svg>'
 };
 document.querySelectorAll('.hcard').forEach(b=>{
-  const k=b.dataset.ex||(b.id==='reactionLabCard'?'rlab':b.id==='recordsCard'?'records':null);
+  const k=b.dataset.ex||(b.id==='reactionLabCard'?'rlab':b.id==='recordsCard'?'records':b.id==='challengeCard'?'challenge':null);
   const ic=b.querySelector('.ic');
   if(k&&HUBICON[k]&&ic) ic.innerHTML=HUBICON[k];
 });
@@ -3348,6 +3411,62 @@ const rlCard=$('reactionLabCard');
 if(rlCard) rlCard.addEventListener('click',()=>{ location.href='./reaction-lab.html'; });
 const recCard=$('recordsCard');
 if(recCard) recCard.addEventListener('click',openRecords);
+const chCard=$('challengeCard');
+if(chCard) chCard.addEventListener('click',()=>{ initAudio(); startChallenge(); });
+
+/* ---------- 챌린지: 16개 활동 순서대로 완주 ---------- */
+const CH_ORDER=['squat','jacks','mole','reaction','sequence','tissue','hammer','balloon','fruit','cloud','mosquito','board','chop','math','neck','posture'];
+const CH_REST=60;
+let CH=null;
+function startChallenge(){
+  CH={idx:0,results:[],timer:null};
+  hideAll();
+  runChallengeActivity();
+}
+function runChallengeActivity(){
+  const key=CH_ORDER[CH.idx];
+  openIntro(key);
+  startActivity();
+}
+function startChallengeRest(){
+  clearInterval(CH.timer);
+  hideAll();
+  const nextKey=CH_ORDER[CH.idx];
+  const nextA=ACT[nextKey];
+  $('chProgress').textContent='챌린지 '+CH.idx+' / '+CH_ORDER.length+' 완료';
+  $('chNextIcon').innerHTML=HUBICON[nextKey]||'';
+  $('chNextTitle').textContent=nextA.intro.title;
+  let remain=CH_REST;
+  $('chRestNum').textContent=remain;
+  $('chRestScr').classList.add('show'); $('chRestScr').scrollTop=0;
+  CH.timer=setInterval(()=>{
+    remain--;
+    if(remain<=0){ clearInterval(CH.timer); advanceChallenge(); }
+    else $('chRestNum').textContent=remain;
+  },1000);
+}
+function advanceChallenge(){
+  clearInterval(CH.timer);
+  $('chRestScr').classList.remove('show');
+  runChallengeActivity();
+}
+function finishChallenge(){
+  const results=CH.results;
+  CH=null;
+  let h='<h2>🏆 챌린지 결과</h2><div class="rp-date">'+new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric'})+' · 16개 전체 완주!</div>';
+  h+='<div class="rp-summary"><span class="sm-chip g0">🎉 챌린지 완주!</span></div>';
+  results.forEach(r=>{
+    h+='<div class="m-card"><div class="m-top"><span class="ic">'+(HUBICON[r.key]||'')+'</span><span class="nm">'+r.label+'</span></div>'
+      +'<div class="m-val">'+(r.num!=null?r.num:'-')+(r.sub?' '+r.sub.replace(/<[^>]*>/g,''):'')+'</div></div>';
+  });
+  h+='<div class="rp-btns"><button class="cta" id="chFinDone">메뉴로</button></div>';
+  $('reportBody').innerHTML=h;
+  $('chFinDone').onclick=()=>{ $('reportScr').classList.remove('show'); goHub(); };
+  hideAll();
+  $('reportScr').classList.add('show'); $('reportScr').scrollTop=0;
+}
+$('chSkipRest').onclick=advanceChallenge;
+$('chAbort').onclick=()=>{ clearInterval(CH&&CH.timer); CH=null; $('chRestScr').classList.remove('show'); goHub(); };
 $('introBack').onclick=goHub;
 $('introStart').onclick=startActivity;
 $('menuBtn').onclick=()=>{ if(current&&current.key==='posture'){ goHub(); return; }
