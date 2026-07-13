@@ -1,0 +1,16 @@
+{
+  "name": "AI 모션 트레이닝 센터",
+  "short_name": "AI 모션짐",
+  "description": "카메라가 자세를 인식하는 운동 게임 & AI 자세 분석",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#02060f",
+  "theme_color": "#02060f",
+  "icons": [
+    { "src": "./icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "./icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "./icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
