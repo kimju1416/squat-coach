@@ -97,6 +97,10 @@
     border:1px solid transparent;background:linear-gradient(135deg,var(--c,rgba(34,211,238,.35)),transparent 55%) border-box;
     -webkit-mask:linear-gradient(#fff 0 0) padding-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;}
   .hub-foot{text-align:center;font-size:10.5px;color:#4e6a8a;margin-top:22px;line-height:1.7;}
+  .hub-foot .insta{display:inline-flex;align-items:center;gap:7px;margin-top:10px;color:#c9a0f5;text-decoration:none;
+    font-weight:800;font-size:12.5px;background:linear-gradient(135deg,rgba(232,121,249,.12),rgba(251,146,60,.10));
+    border:1px solid rgba(232,121,249,.35);border-radius:99px;padding:9px 18px;}
+  .hub-foot .insta:active{transform:scale(.96);}
 
   /* ===== 인트로 ===== */
   #introScr .big{font-size:56px;filter:drop-shadow(0 0 16px rgba(34,211,238,.55));}
@@ -256,7 +260,10 @@
       <div class="hub-grid">
         <button class="hcard wide" data-ex="posture" style="--c:rgba(45,212,191,.5);--tc:#2dd4bf"><span class="ic">🧍</span><div class="tt">자세 분석 + 운동 처방</div><div class="dd">정면·측면 정밀 스캔으로 거북목·어깨/골반 등 12가지 지표를 분석해 자세 점수와 맞춤 운동을 처방해요</div></button>
       </div>
-      <div class="hub-foot">🔒 영상은 이 기기 안에서만 분석돼요 · 저장·전송 없음<br>AI MOTION TRAINING · ON-DEVICE</div>
+      <div class="hub-foot">🔒 영상은 이 기기 안에서만 분석돼요 · 저장·전송 없음<br>AI MOTION TRAINING · ON-DEVICE<br>
+        <a class="insta" href="https://www.instagram.com/kimju.zip" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="5.5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.3" cy="6.7" r="0.7" fill="currentColor" stroke="none"/></svg>
+          kimju.zip</a></div>
     </div>
   </div>
 
@@ -2296,23 +2303,25 @@ ACT.chop=(()=>{
 ACT.neck=(()=>{
   const G={};
   const DUR=45, HOLD=900, D=180/Math.PI;
-  // 좌·우·위·아래 4방향(기울이기 제거) — 위/아래는 천천히 오래 유지하도록 홀드 길게
+  // 좌·우·위·아래 4방향 — 위/아래는 천천히 오래 유지하도록 홀드 길게.
+  // 좌우는 임계 완화(0.13→0.09) + 비대칭 신호 OR 병용(실사용에서 좌우 인식이 약하던 문제 해결)
   const MOVES=[
-    {k:'left', ang:Math.PI,    label:'왼쪽으로 고개 돌리기',   hold:900,  test:d=>d.yaw<-0.13},
-    {k:'right',ang:0,          label:'오른쪽으로 고개 돌리기', hold:900,  test:d=>d.yaw>0.13},
-    {k:'up',   ang:-Math.PI/2, label:'천장 보기 (고개 들기)',  hold:1600, test:d=>d.pitch<-0.09},
-    {k:'down', ang:Math.PI/2,  label:'바닥 보기 (고개 숙이기)',hold:1600, test:d=>d.pitch>0.10}
+    {k:'left', ang:Math.PI,    label:'왼쪽으로 고개 돌리기',   hold:900,  test:d=>d.yaw<-0.09||d.asym<-0.15, gauge:d=>Math.max(-d.yaw/0.09,-d.asym/0.15)},
+    {k:'right',ang:0,          label:'오른쪽으로 고개 돌리기', hold:900,  test:d=>d.yaw>0.09||d.asym>0.15,   gauge:d=>Math.max(d.yaw/0.09,d.asym/0.15)},
+    {k:'up',   ang:-Math.PI/2, label:'천장 보기 (고개 들기)',  hold:1600, test:d=>d.pitch<-0.09,             gauge:d=>-d.pitch/0.09},
+    {k:'down', ang:Math.PI/2,  label:'바닥 보기 (고개 숙이기)',hold:1600, test:d=>d.pitch>0.10,              gauge:d=>d.pitch/0.10}
   ];
   function facePose(fl){
     const nose=toPx(fl[1]), fh=toPx(fl[10]), ch=toPx(fl[152]);
     const cl=toPx(fl[234]), cr=toPx(fl[454]);
-    const el2=toPx(fl[33]), er=toPx(fl[263]);
     const fw=Math.max(20,Math.hypot(cl.x-cr.x,cl.y-cr.y));
     const fhh=Math.max(20,Math.hypot(fh.x-ch.x,fh.y-ch.y));
+    // 좌우는 두 신호 병용: 코의 좌우 치우침(yaw) + 코-양볼 거리 비대칭(asym, 회전 시 더 크게 변함)
+    const dL=Math.hypot(nose.x-cl.x,nose.y-cl.y), dR=Math.hypot(nose.x-cr.x,nose.y-cr.y);
     return {
       yaw:(nose.x-(cl.x+cr.x)/2)/fw,
+      asym:(dL-dR)/fw,
       pitch:(nose.y-(fh.y+ch.y)/2)/fhh,
-      roll:Math.atan2(er.y-el2.y,er.x-el2.x)*D,
       cx:(cl.x+cr.x)/2, cy:(fh.y+ch.y)/2, fw
     };
   }
@@ -2353,7 +2362,8 @@ ACT.neck=(()=>{
     key:'neck', hud:{counter:true,timer:true,end:true}, _G:G, needsFace:true,
     intro:{emoji:'🤖',title:'아이언 목운동',desc:'얼굴에 <b>황금 메시 마스크</b>가 씌워져요!<br>화살표를 따라 <b>고개를 좌·우·위·아래로</b> 지긋이 움직이면 인식돼요.<br>45초 동안 목 스트레칭 몇 동작이나 할까요?'},
     start(){ G.n=0; G.endAt=performance.now()+DUR*1000; G.pt=0;
-      G.state='cal'; G.calT=null; G.base=null; G.mi=0; G.holdT=null; G.restUntil=0; G.noFace=0;
+      G.state='cal'; G.calT=null; G.base=null; G.mi=0; G.restUntil=0; G.noFace=0;
+      G.holdAcc=0; G.outAcc=0; G.fpt=0;
       $('repNum').textContent='0'; $('repLbl').textContent='MOVES'; $('timerUnit').textContent='SEC'; },
     end(){ this.finish(); },
     finish(){
@@ -2381,14 +2391,14 @@ ACT.neck=(()=>{
       const p=facePose(fl);
       if(G.state==='cal'){
         if(!G.calT) G.calT=now;
-        G.base=G.base?{yaw:G.base.yaw*0.85+p.yaw*0.15,pitch:G.base.pitch*0.85+p.pitch*0.15,roll:G.base.roll*0.85+p.roll*0.15}
-                     :{yaw:p.yaw,pitch:p.pitch,roll:p.roll};
+        G.base=G.base?{yaw:G.base.yaw*0.85+p.yaw*0.15,pitch:G.base.pitch*0.85+p.pitch*0.15,asym:G.base.asym*0.85+p.asym*0.15}
+                     :{yaw:p.yaw,pitch:p.pitch,asym:p.asym};
         const cp=Math.min(100,Math.round((now-G.calT)/1600*100));
         setState('마스크 장착 중… 정면을 봐주세요 '+cp+'%','#ffd166');
-        if(now-G.calT>1600){ G.state='move'; G.holdT=null; SFX.ding(); setState('준비 완료! 화살표를 따라 움직여요','#a3e635'); }
+        if(now-G.calT>1600){ G.state='move'; G.holdAcc=0; G.outAcc=0; G.fpt=now; SFX.ding(); setState('준비 완료! 화살표를 따라 움직여요','#a3e635'); }
         return;
       }
-      const d={yaw:p.yaw-G.base.yaw, pitch:p.pitch-G.base.pitch, roll:p.roll-G.base.roll};
+      const d={yaw:p.yaw-G.base.yaw, pitch:p.pitch-G.base.pitch, asym:p.asym-G.base.asym};
       const mv=MOVES[G.mi%MOVES.length];
       const ax=map.W/2, ay=Math.max(96,map.H*0.14), ar=Math.max(40,Math.min(map.W,map.H)/9);
       if(G.restUntil>now){
@@ -2396,23 +2406,29 @@ ACT.neck=(()=>{
         drawArrow(ax,ay,ar,mv.ang,'rgba(148,163,184,.4)',0);
         return;
       }
+      // 홀드는 누적식: 경계에서 한두 프레임 튕겨도 리셋하지 않고 0.35초 이상 벗어나야 초기화
       const inZone=mv.test(d);
-      if(inZone){
-        if(!G.holdT) G.holdT=now;
-        const prog=(now-G.holdT)/(mv.hold||HOLD);
-        drawArrow(ax,ay,ar,mv.ang,'#a3e635',prog);
-        setState(mv.label+' — 유지!','#a3e635');
-        if(prog>=1){
-          G.n++; G.mi++;
-          const n=$('repNum'); n.textContent=G.n;
-          n.classList.remove('pop'); void n.offsetWidth; n.classList.add('pop');
-          SFX.ding(); buzz(35);
-          G.holdT=null; G.restUntil=now+1100;   // 다음 동작 전 여유 있게
-        }
-      }else{
-        G.holdT=null;
-        drawArrow(ax,ay,ar,mv.ang,'#ffd166',0);
-        setState('▶ '+mv.label,'#ffd166');
+      const fdt=Math.min(120,now-(G.fpt||now)); G.fpt=now;
+      if(inZone){ G.holdAcc+=fdt; G.outAcc=0; }
+      else{ G.outAcc+=fdt; if(G.outAcc>350) G.holdAcc=0; }
+      const prog=G.holdAcc/(mv.hold||HOLD);
+      drawArrow(ax,ay,ar,mv.ang,inZone?'#a3e635':'#ffd166',prog);
+      // 실시간 방향 게이지: 임계까지 얼마나 왔는지 보여줘 "인식 중" 피드백
+      const gv=Math.max(0,Math.min(1,mv.gauge(d)));
+      const mw=Math.max(96,map.W*0.3), my=ay+ar*1.45;
+      ctx.save();
+      ctx.fillStyle='rgba(148,163,184,.25)'; rrCtx(ax-mw/2,my,mw,8,4); ctx.fill();
+      ctx.fillStyle=inZone?'#a3e635':'#ffd166'; rrCtx(ax-mw/2,my,mw*gv,8,4); ctx.fill();
+      ctx.strokeStyle='rgba(255,255,255,.7)'; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(ax+mw/2,my-3); ctx.lineTo(ax+mw/2,my+11); ctx.stroke();
+      ctx.restore();
+      setState(inZone?(mv.label+' — 유지!'):('▶ '+mv.label),inZone?'#a3e635':'#ffd166');
+      if(prog>=1){
+        G.n++; G.mi++;
+        const n=$('repNum'); n.textContent=G.n;
+        n.classList.remove('pop'); void n.offsetWidth; n.classList.add('pop');
+        SFX.ding(); buzz(35);
+        G.holdAcc=0; G.outAcc=0; G.restUntil=now+1100;   // 다음 동작 전 여유 있게
       }
     }
   };
