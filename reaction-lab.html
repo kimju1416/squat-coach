@@ -209,7 +209,7 @@ button{font-family:inherit;border:none;cursor:pointer;background:none;color:inhe
 <div class="screen" id="g1">
   <div class="wrap">
     <div class="gamehead">
-      <button class="backbtn" onclick="goHub()">←</button>
+      <button class="backbtn" onclick="history.back()">←</button>
       <div><h2>🎯 타이밍 바<span class="diffbadge" id="db-g1"></span></h2><div class="gh-sub">바가 보라색 존에 들어올 때 탭! 15회 도전</div></div>
     </div>
     <div class="statrow">
@@ -236,7 +236,7 @@ button{font-family:inherit;border:none;cursor:pointer;background:none;color:inhe
         <div id="g1new"></div>
       </div>
       <button class="bigbtn tapbtn" onclick="g1.start()">다시 도전</button>
-      <button class="ghostbtn" onclick="goHub()">홈으로</button>
+      <button class="ghostbtn" onclick="history.back()">홈으로</button>
     </div>
     <div style="height:24px"></div>
   </div>
@@ -246,7 +246,7 @@ button{font-family:inherit;border:none;cursor:pointer;background:none;color:inhe
 <div class="screen" id="g2">
   <div class="wrap">
     <div class="gamehead">
-      <button class="backbtn" onclick="goHub()">←</button>
+      <button class="backbtn" onclick="history.back()">←</button>
       <div><h2>🚦 신호등 반응<span class="diffbadge" id="db-g2"></span></h2><div class="gh-sub">초록불이 켜지면 화면을 탭! 5회 평균</div></div>
     </div>
     <div class="rounds" id="g2rounds">
@@ -265,7 +265,7 @@ button{font-family:inherit;border:none;cursor:pointer;background:none;color:inhe
         <div id="g2new"></div>
       </div>
       <button class="bigbtn" style="background:var(--c2)" onclick="g2.start()">다시 도전</button>
-      <button class="ghostbtn" onclick="goHub()">홈으로</button>
+      <button class="ghostbtn" onclick="history.back()">홈으로</button>
     </div>
     <div style="height:24px"></div>
   </div>
@@ -275,7 +275,7 @@ button{font-family:inherit;border:none;cursor:pointer;background:none;color:inhe
 <div class="screen" id="g3">
   <div class="wrap">
     <div class="gamehead">
-      <button class="backbtn" onclick="goHub()">←</button>
+      <button class="backbtn" onclick="history.back()">←</button>
       <div><h2>🕊️ 새 잡기<span class="diffbadge" id="db-g3"></span></h2><div class="gh-sub">20초 동안 날아가는 새를 최대한 많이 탭!</div></div>
     </div>
     <div class="sky" id="g3sky">
@@ -295,7 +295,7 @@ button{font-family:inherit;border:none;cursor:pointer;background:none;color:inhe
         <div id="g3new"></div>
       </div>
       <button class="bigbtn tapstart" onclick="g3.start()">다시 도전</button>
-      <button class="ghostbtn" onclick="goHub()">홈으로</button>
+      <button class="ghostbtn" onclick="history.back()">홈으로</button>
     </div>
     <div style="height:24px"></div>
   </div>
@@ -305,7 +305,7 @@ button{font-family:inherit;border:none;cursor:pointer;background:none;color:inhe
 <div class="screen" id="g4">
   <div class="wrap">
     <div class="gamehead">
-      <button class="backbtn" onclick="goHub()">←</button>
+      <button class="backbtn" onclick="history.back()">←</button>
       <div><h2>⏰ N초 만들기<span class="diffbadge" id="db-g4"></span></h2><div class="gh-sub">시작 누르고, 딱 N초 됐을 때 정지! 5회 평균 오차</div></div>
     </div>
     <div class="secpick" id="g4pick">
@@ -335,7 +335,7 @@ button{font-family:inherit;border:none;cursor:pointer;background:none;color:inhe
         <div id="g4new"></div>
       </div>
       <button class="bigbtn startbtn" onclick="g4.start()">다시 도전</button>
-      <button class="ghostbtn" onclick="goHub()">홈으로</button>
+      <button class="ghostbtn" onclick="history.back()">홈으로</button>
     </div>
     <div style="height:24px"></div>
   </div>
@@ -345,7 +345,7 @@ button{font-family:inherit;border:none;cursor:pointer;background:none;color:inhe
 <div class="screen" id="g5">
   <div class="wrap">
     <div class="gamehead">
-      <button class="backbtn" onclick="goHub()">←</button>
+      <button class="backbtn" onclick="history.back()">←</button>
       <div><h2>🔴 색깔 반응<span class="diffbadge" id="db-g5"></span></h2><div class="gh-sub">빨간 원만 탭! 다른 색은 절대 탭하면 안 됨 · 30초</div></div>
     </div>
     <div class="arena" id="g5arena">
@@ -367,7 +367,7 @@ button{font-family:inherit;border:none;cursor:pointer;background:none;color:inhe
         <div id="g5new"></div>
       </div>
       <button class="bigbtn startbtn" onclick="g5.start()">다시 도전</button>
-      <button class="ghostbtn" onclick="goHub()">홈으로</button>
+      <button class="ghostbtn" onclick="history.back()">홈으로</button>
     </div>
     <div style="height:24px"></div>
   </div>
@@ -384,7 +384,7 @@ button{font-family:inherit;border:none;cursor:pointer;background:none;color:inhe
       <div class="pips top" id="g6pipstop"><i></i><i></i><i></i></div>
       <div class="sigdot" id="g6sig"></div>
       <div class="pips bot" id="g6pipsbot"><i></i><i></i><i></i></div>
-      <button class="exitduel" onclick="goHub()">✕</button>
+      <button class="exitduel" onclick="history.back()">✕</button>
     </div>
     <div class="pzone pbot" id="g6bot" onpointerdown="g6.tap('bot',event)">
       <span id="g6botname">플레이어 2</span>
@@ -483,6 +483,7 @@ function openGame(id){
   current=id;
   window.scrollTo(0,0);
   games[id]?.enter?.();
+  try{ history.pushState({p:id},''); }catch(e){}
 }
 function goHub(){
   Object.values(games).forEach(g=>g.stop&&g.stop());
@@ -491,6 +492,10 @@ function goHub(){
   current='hub';
   refreshBests();
 }
+/* 폰 뒤로가기: 서브게임 중이면 허브로만 이동, 허브에서는 index.html로 자연 복귀 */
+window.addEventListener('popstate',(e)=>{
+  if(current!=='hub') goHub();
+});
 function refreshBests(){
   const k=s=>store.get(s+'_'+diff);
   const b1=k('rl_g1');$('best-g1').textContent=b1?b1+'점':'-';
