@@ -56,7 +56,7 @@
     max-width:92vw;text-align:center;font-size:min(5.6vw,23px);font-weight:900;letter-spacing:-.5px;z-index:6;
     color:#22d3ee;text-shadow:0 0 16px currentColor;transition:color .15s;
     background:rgba(4,12,26,.5);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
-    border:1px solid rgba(148,163,184,.16);border-radius:16px;padding:9px 18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    border:1px solid rgba(148,163,184,.16);border-radius:16px;padding:9px 18px;line-height:1.4;word-break:keep-all;}
   #stateTxt:empty{display:none;}
   #depthWrap{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 84px);width:min(72vw,320px);height:10px;border-radius:99px;background:rgba(148,163,184,.22);overflow:hidden;z-index:6;border:1px solid rgba(34,211,238,.3);display:none;}
   #depthBar{height:100%;width:0%;border-radius:99px;background:linear-gradient(90deg,#22d3ee,#a3e635);box-shadow:0 0 14px rgba(163,230,53,.7);transition:width .08s linear;}
@@ -879,6 +879,25 @@ function drawVegBody(kind,x,y,len,h){
   }
   ctx.restore();
 }
+// 타격 폭발 이펙트(이모지 💥 대체): 방사형 스파이크 + 링. 유효하면 true
+function drawBurst(x,y,t0,now,col){
+  const age=now-t0; if(age>420) return false;
+  const a2=1-age/420, rr=16+(1-a2)*50;
+  ctx.save();
+  ctx.strokeStyle=hexA(col||'#ffd166',a2); ctx.lineWidth=3.5; ctx.lineCap='round';
+  ctx.shadowBlur=12; ctx.shadowColor=col||'#ffd166';
+  for(let i=0;i<8;i++){
+    const an=i*Math.PI/4+0.15;
+    ctx.beginPath();
+    ctx.moveTo(x+Math.cos(an)*rr*0.55,y+Math.sin(an)*rr*0.55);
+    ctx.lineTo(x+Math.cos(an)*rr,y+Math.sin(an)*rr);
+    ctx.stroke();
+  }
+  ctx.shadowBlur=0;
+  ctx.strokeStyle='rgba(255,255,255,'+(a2*0.9).toFixed(2)+')'; ctx.lineWidth=2.5;
+  ctx.beginPath(); ctx.arc(x,y,rr*0.6,0,Math.PI*2); ctx.stroke();
+  ctx.restore(); return true;
+}
 // 두더지 — 흙더미 구멍에서 빼꼼 나온 진짜 두더지 (k=팝인 0~1, t=ms)
 function drawMole(x,y,r,t,k){
   ctx.save(); ctx.translate(x,y);
@@ -1296,7 +1315,7 @@ ACT.mole=(()=>{
               G.score+=gain;
               $('repNum').textContent=G.score;
               const n=$('repNum'); n.classList.remove('pop'); void n.offsetWidth; n.classList.add('pop');
-              G.pop={x:m.x,y:m.y,t:now,txt:'+'+gain+(G.combo>=3?' 🔥x'+G.combo:'')};
+              G.pop={x:m.x,y:m.y,t:now,txt:'+'+gain+(G.combo>=3?' COMBO x'+G.combo:'')};
               G.boom={x:m.x,y:m.y,t:now};
               setState(G.combo>=3?G.combo+'콤보! 🔥':'잡았다!','#a3e635');
               beep(660+Math.min(400,G.combo*40),0.1); buzz(40);
@@ -1305,13 +1324,7 @@ ACT.mole=(()=>{
           }
         }
       }
-      if(G.boom&&now-G.boom.t<450){
-        const ba=1-(now-G.boom.t)/450;
-        ctx.save(); ctx.globalAlpha=ba;
-        ctx.font=Math.round(50+(1-ba)*70)+'px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-        ctx.fillText('💥',G.boom.x,G.boom.y);
-        ctx.restore();
-      }
+      if(G.boom&&!drawBurst(G.boom.x,G.boom.y,G.boom.t,now,'#ffd166')) G.boom=null;
       if(G.pop&&now-G.pop.t<600){
         const a=1-(now-G.pop.t)/600;
         ctx.font='900 '+Math.max(20,map.W/14)+'px Pretendard'; ctx.textAlign='center';
@@ -1588,7 +1601,7 @@ ACT.hammer=(()=>{
               G.n++;
               const n=$('repNum'); n.textContent=G.n;
               n.classList.remove('pop'); void n.offsetWidth; n.classList.add('pop');
-              setState('뚝딱! 완성 🔨','#a3e635'); SFX.ding();
+              setState('뚝딱! 완성!','#a3e635'); SFX.ding();
               const others=G.nails.filter(o=>o!==nl).map(o=>({x:o.x,y:o.y,d:o.r*3.4}));
               Object.assign(nl,newNail(others));
             }else setState(['땅!','땅땅!'][nl.depth-1]||'땅!','#fbbf24');
@@ -1911,7 +1924,7 @@ ACT.cloud=(()=>{
           if(rise>thresh){ G.state='air'; G.airStart=now; }
           else setState(G.steps===0?'폴짝! 점프해서 구름을 올라요 ☁️':(zoneName(G.steps)+' · '+G.steps+'계단'),'#7dd3fc');
         }else{
-          setState('점프! ⬆️','#a3e635');
+          setState('점프!','#a3e635');
           if(rise<thresh*0.35){
             if(now-G.airStart>110){
               G.steps++;
@@ -1922,8 +1935,8 @@ ACT.cloud=(()=>{
                 a:Math.PI+(Math.random()-0.5)*1.6,v:90+Math.random()*160,t:now});
               SFX.poof(); beep(Math.min(1400,480+G.steps*14),0.07,0.15); buzz(28);
               const z=zoneName(G.steps);
-              if(z!==G.zone){ G.zone=z; setState('🎉 '+z+' 도착!','#fbbf24'); SFX.ding(); }
-              if(MILES[G.steps]) G.mile={e:MILES[G.steps],x:map.W*(Math.random()<0.5?0.18:0.82),y:-40,t:now};
+              if(z!==G.zone){ G.zone=z; setState(z+' 도착!','#fbbf24'); SFX.ding(); }
+              if(MILES[G.steps]) G.mile={n:G.steps,x:map.W*(Math.random()<0.5?0.22:0.78),t:now};
             }
             G.state='ground';
           }
@@ -1937,23 +1950,30 @@ ACT.cloud=(()=>{
         ctx.beginPath(); ctx.arc(p.x+Math.cos(p.a)*d,p.y+Math.sin(p.a)*d*0.4,7*al+2,0,Math.PI*2); ctx.fill();
         return true;
       });
-      // 마일스톤(구역 도달 이모지가 옆에서 두둥실 지나감)
+      // 마일스톤 배지(황금 필)가 옆에서 두둥실 지나감 — 이모지 대신 벡터
       if(G.mile){
         const age=now-G.mile.t;
-        if(age>2600) G.mile=null;
+        if(age>2400) G.mile=null;
         else{
-          const my=age/2600*(map.H+120)-60;
-          ctx.save(); ctx.font=Math.max(40,Math.min(map.W,map.H)/9)+'px sans-serif';
-          ctx.textAlign='center'; ctx.textBaseline='middle';
-          ctx.shadowBlur=16; ctx.shadowColor='#fff';
-          ctx.fillText(G.mile.e,G.mile.x,my); ctx.restore();
+          const my=age/2400*(map.H+120)-60;
+          const txt='★ '+G.mile.n+'계단 돌파';
+          ctx.save();
+          ctx.font='900 '+Math.max(14,map.W/24)+'px Pretendard';
+          const tw=ctx.measureText(txt).width+32;
+          ctx.fillStyle='rgba(4,12,26,.6)';
+          ctx.strokeStyle='rgba(251,191,36,.85)'; ctx.lineWidth=2;
+          ctx.shadowBlur=14; ctx.shadowColor='#fbbf24';
+          rrCtx(G.mile.x-tw/2,my-23,tw,46,23); ctx.fill(); ctx.stroke();
+          ctx.shadowBlur=0; ctx.fillStyle='#ffd166'; ctx.textAlign='center'; ctx.textBaseline='middle';
+          ctx.fillText(txt,G.mile.x,my+1);
+          ctx.restore();
         }
       }
       // 상단 고도 라벨
       ctx.save();
       ctx.font='800 '+Math.max(13,map.W/26)+'px Pretendard'; ctx.textAlign='center';
       ctx.fillStyle='rgba(255,255,255,.92)'; ctx.shadowBlur=10; ctx.shadowColor='rgba(125,211,252,.8)';
-      ctx.fillText('☁️ '+zoneName(G.steps)+' · '+G.steps+'계단',map.W/2,Math.max(64,map.H*0.09));
+      ctx.fillText(zoneName(G.steps)+' · '+G.steps+'계단',map.W/2,Math.max(64,map.H*0.09));
       ctx.restore();
     }
   };
@@ -2036,7 +2056,7 @@ ACT.mosquito=(()=>{
                 n.classList.remove('pop'); void n.offsetWidth; n.classList.add('pop');
                 G.boom={x:q.x,y:q.y,t:now};
                 SFX.clap(); SFX.splat(); buzz(40);
-                setState(['짝! 잡았다!','명중! 🦟💥','박수 원샷!'][G.n%3],'#a3e635');
+                setState(['짝! 잡았다!','명중!','박수 원샷!'][G.n%3],'#a3e635');
                 G.mq=null; G.respawnAt=now+450;
               }else{
                 SFX.clap(); setState('헛박수! 모기 가까이에서 짝!','#fbbf24');
@@ -2063,17 +2083,9 @@ ACT.mosquito=(()=>{
           ctx.lineTo(G.clapFx.x+Math.cos(an)*(rr2*0.75+16*a2),G.clapFx.y+Math.sin(an)*(rr2*0.75+16*a2));
           ctx.stroke();
         }
-        ctx.globalAlpha=a2;
-        ctx.font=Math.round(32+22*(1-a2))+'px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-        ctx.fillText('👏',G.clapFx.x,G.clapFx.y-rr2*0.95);
         ctx.restore();
       }
-      if(G.boom&&now-G.boom.t<420){
-        const ba=1-(now-G.boom.t)/420;
-        ctx.save(); ctx.globalAlpha=ba;
-        ctx.font=Math.round(44+(1-ba)*50)+'px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-        ctx.fillText('💥',G.boom.x,G.boom.y); ctx.restore();
-      }
+      if(G.boom&&!drawBurst(G.boom.x,G.boom.y,G.boom.t,now,'#a3e635')) G.boom=null;
     }
   };
 })();
@@ -2362,9 +2374,16 @@ ACT.neck=(()=>{
     key:'neck', hud:{counter:true,timer:true,end:true}, _G:G, needsFace:true,
     intro:{emoji:'🤖',title:'아이언 목운동',desc:'얼굴에 <b>황금 메시 마스크</b>가 씌워져요!<br>화살표를 따라 <b>고개를 좌·우·위·아래로</b> 지긋이 움직이면 인식돼요.<br>45초 동안 목 스트레칭 몇 동작이나 할까요?'},
     start(){ G.n=0; G.endAt=performance.now()+DUR*1000; G.pt=0;
-      G.state='cal'; G.calT=null; G.base=null; G.mi=0; G.restUntil=0; G.noFace=0;
+      G.state='cal'; G.calT=null; G.base=null; G.mi=0; G.restUntil=0; G.lostT=null;
       G.holdAcc=0; G.outAcc=0; G.fpt=0;
       $('repNum').textContent='0'; $('repLbl').textContent='MOVES'; $('timerUnit').textContent='SEC'; },
+    _succeed(now){
+      G.n++; G.mi++;
+      const n=$('repNum'); n.textContent=G.n;
+      n.classList.remove('pop'); void n.offsetWidth; n.classList.add('pop');
+      SFX.ding(); buzz(35);
+      G.holdAcc=0; G.outAcc=0; G.restUntil=now+1100;
+    },
     end(){ this.finish(); },
     finish(){
       const prev=+(best.get('neck')||0); if(G.n>prev) best.set('neck',G.n);
@@ -2381,12 +2400,28 @@ ACT.neck=(()=>{
       if(DEBUG) fl=window.__fakeFace||null;
       else if(face){ try{ const fr=face.detectForVideo(video,now+0.5); fl=(fr&&fr.faceLandmarks&&fr.faceLandmarks[0])||null; }catch(e){} }
       if(!fl){
-        G.noFace++;
-        if(G.noFace>30){ G.state='cal'; G.calT=null; G.base=null; }
+        if(!G.lostT) G.lostT=now;
+        const lost=now-G.lostT;
+        // 고개를 끝까지 들거나 숙이면 얼굴 인식이 끊기는데, 그 자체가 동작을 크게 하고 있다는 증거!
+        // 위/아래 동작 중 홀드가 이미 진행 중이면 최대 1.2초까지 인식 유지로 간주하고 계속 누적
+        if(G.state==='move'&&G.restUntil<=now){
+          const mv2=MOVES[G.mi%MOVES.length];
+          if((mv2.k==='up'||mv2.k==='down')&&G.holdAcc>0&&lost<1200){
+            const fdt2=Math.min(120,now-(G.fpt||now)); G.fpt=now;
+            G.holdAcc+=fdt2; G.outAcc=0;
+            const ax2=map.W/2, ay2=Math.max(96,map.H*0.14), ar2=Math.max(40,Math.min(map.W,map.H)/9);
+            const prog2=G.holdAcc/(mv2.hold||HOLD);
+            drawArrow(ax2,ay2,ar2,mv2.ang,'#a3e635',prog2);
+            setState(mv2.label+' — 좋아요, 그대로 유지!','#a3e635');
+            if(prog2>=1) this._succeed(now);
+            return;
+          }
+        }
+        if(lost>3000){ G.state='cal'; G.calT=null; G.base=null; }   // 3초 이상 놓쳤을 때만 재보정
         setState('얼굴이 잘 보이게 조금 가까이 와주세요','#fbbf24');
         return;
       }
-      G.noFace=0;
+      G.lostT=null;
       drawMask(fl);
       const p=facePose(fl);
       if(G.state==='cal'){
@@ -2423,13 +2458,7 @@ ACT.neck=(()=>{
       ctx.beginPath(); ctx.moveTo(ax+mw/2,my-3); ctx.lineTo(ax+mw/2,my+11); ctx.stroke();
       ctx.restore();
       setState(inZone?(mv.label+' — 유지!'):('▶ '+mv.label),inZone?'#a3e635':'#ffd166');
-      if(prog>=1){
-        G.n++; G.mi++;
-        const n=$('repNum'); n.textContent=G.n;
-        n.classList.remove('pop'); void n.offsetWidth; n.classList.add('pop');
-        SFX.ding(); buzz(35);
-        G.holdAcc=0; G.outAcc=0; G.restUntil=now+1100;   // 다음 동작 전 여유 있게
-      }
+      if(prog>=1) this._succeed(now);
     }
   };
 })();
@@ -2505,25 +2534,27 @@ ACT.math=(()=>{
       ctx.font='900 '+Math.max(30,pw/7)+'px Pretendard'; ctx.textAlign='center'; ctx.textBaseline='middle';
       ctx.fillStyle='#fff'; ctx.fillText(G.q.txt+' = ?',px2,py+2);
       ctx.restore();
-      // 답 선택지(좌우 상단)
-      G.q.ch.forEach(c=>{
-        drawTarget(c.x,c.y,c.r,c.ok?'#a3e635':'#a3e635',null,String(c.v));   // 색으로 정답 티 안 나게 동일색
-        if(hands.length){
+      // 답 선택지(좌우 상단) — q를 지역 캡처: 한 스윙이 양쪽을 동시에 스치면 G.q=null 후
+      // 다음 순회에서 G.q.done 접근으로 터지던 크래시 방지
+      const q=G.q;
+      q.ch.forEach(c=>{
+        drawTarget(c.x,c.y,c.r,'#a3e635',null,String(c.v));
+        if(hands.length&&!q.done){
           const near=anyNear(hands,c.x,c.y,c.r+14);
           if(c.lock){ if(!near) c.lock=false; return; }
-          if(anySegHit(hands,c.x,c.y,c.r+14)&&!G.q.done){
-            G.q.done=true;
+          if(anySegHit(hands,c.x,c.y,c.r+14)){
+            q.done=true;
             if(c.ok){
               G.ok++; G.streak++;
               G.score+=10+Math.min(10,(G.streak-1)*2);
-              setState(G.streak>=3?G.streak+'연속 정답! 천재!':'정답! ⭕','#a3e635');
+              setState(G.streak>=3?G.streak+'연속 정답! 천재!':'정답!','#a3e635');
               if(G.streak%5===0) SFX.ding(); else SFX.ping();
               buzz(30);
             }else{
               G.bad++; G.streak=0;
               G.score=Math.max(0,G.score-5);
               G.shake=now;
-              setState('앗, 오답! ❌ -5점','#fb7185');
+              setState('오답! -5점','#fb7185');
               beep(190,0.15,0.3); buzz([0,60,40,60]);
             }
             const n=$('repNum'); n.textContent=G.score;
@@ -3208,7 +3239,7 @@ $('endBtn').onclick=()=>{ if(current&&current.end) current.end(); };
 $('againBtn').onclick=()=>{ openIntro(curKey); startActivity(); };
 $('resMenuBtn').onclick=goHub;
 document.addEventListener('visibilitychange',()=>{
-  if(document.hidden){ running=false; }
+  if(document.hidden){ running=false; SFX.mosqBuzz.stop(); }   // 탭 숨김 시 웅웅 소리 계속 나던 버그 수정
   else if(current&&(camOn||DEBUG)){ keepAwake(); running=true; lastVideoTime=-1; loop(); }
 });
 
