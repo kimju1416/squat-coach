@@ -252,7 +252,7 @@
         <button class="hcard" data-ex="mosquito" style="--c:rgba(163,230,53,.5);--tc:#a3e635"><span class="ic">🦟</span><div class="tt">모기 잡기</div><div class="dd">모기 근처에서 박수 짝! 45초 몇 마리?</div><div class="bst" data-best="mosquito"></div></button>
         <button class="hcard" data-ex="board" style="--c:rgba(74,222,128,.5);--tc:#4ade80"><span class="ic">🧽</span><div class="tt">칠판 지우기</div><div class="dd">낙서 칠판 3판 연속 클리어! 타임어택</div><div class="bst" data-best="board"></div></button>
         <button class="hcard" data-ex="chop" style="--c:rgba(245,158,11,.5);--tc:#f59e0b"><span class="ic">🔪</span><div class="tt">도마 칼질</div><div class="dd">손날로 탁탁탁 채썰기, 45초 몇 조각?</div><div class="bst" data-best="chop"></div></button>
-        <button class="hcard" data-ex="math" style="--c:rgba(251,191,36,.5);--tc:#fbbf24"><span class="ic">🧮</span><div class="tt">계산 눈치 게임</div><div class="dd">덧셈·뺄셈·구구단, 정답을 먼저 쳐라!</div><div class="bst" data-best="math"></div></button>
+        <button class="hcard" data-ex="math" style="--c:rgba(251,191,36,.5);--tc:#fbbf24"><span class="ic">🧮</span><div class="tt">계산 눈치 게임</div><div class="dd">유치원~고등까지 난이도 선택, 정답을 먼저 쳐라!</div><div class="bst" data-best="math"></div></button>
         <button class="hcard wide" data-ex="neck" style="--c:rgba(255,209,102,.55);--tc:#ffd166"><span class="ic">🤖</span><div class="tt">아이언 목운동</div><div class="dd">얼굴 인식 황금 마스크를 쓰고 화살표 따라 목 스트레칭 — 좌·우·위·아래 지긋이</div><div class="bst" data-best="neck"></div></button>
       </div>
       <div class="hub-sec">리액션 랩</div>
@@ -2476,18 +2476,45 @@ ACT.neck=(()=>{
 ACT.math=(()=>{
   const G={};
   const DUR=45;
-  const MODES=[['add','덧셈'],['sub','뺄셈'],['mul','구구단'],['mix','모두 섞기']];
+  const LEVELS=[['kinder','유치원'],['low','초저'],['high','초고'],['middle','중학생'],['hs','고등학생']];
+  function fmt(n){ return n<0 ? '('+n+')' : ''+n; }
   function gen(now){
-    const mode=G.mode==='mix'?['add','sub','mul'][(Math.random()*3)|0]:G.mode;
-    let a,b,ans,txt;
-    if(mode==='add'){ a=2+((Math.random()*38)|0); b=2+((Math.random()*38)|0); ans=a+b; txt=a+' + '+b; }
-    else if(mode==='sub'){ a=10+((Math.random()*80)|0); b=2+((Math.random()*(a-4))|0); ans=a-b; txt=a+' − '+b; }
-    else{ a=2+((Math.random()*8)|0); b=2+((Math.random()*8)|0); ans=a*b; txt=a+' × '+b; }
+    const lvl=G.level;
+    let a,b,c,op,ans,txt,allowNeg=false;
+    if(lvl==='kinder'){
+      if(Math.random()<0.5){ a=1+((Math.random()*8)|0); b=1+((Math.random()*(10-a))|0); ans=a+b; txt=a+' + '+b; }
+      else{ a=2+((Math.random()*8)|0); b=1+((Math.random()*(a-1))|0); ans=a-b; txt=a+' − '+b; }
+    }else if(lvl==='low'){
+      if(Math.random()<0.5){ a=1+((Math.random()*19)|0); b=1+((Math.random()*19)|0); ans=a+b; txt=a+' + '+b; }
+      else{ a=10+((Math.random()*30)|0); b=1+((Math.random()*a)|0); ans=a-b; txt=a+' − '+b; }
+    }else if(lvl==='high'){
+      op=['add','sub','mul','div'][(Math.random()*4)|0];
+      if(op==='add'){ a=10+((Math.random()*190)|0); b=10+((Math.random()*190)|0); ans=a+b; txt=a+' + '+b; }
+      else if(op==='sub'){ a=20+((Math.random()*280)|0); b=1+((Math.random()*a)|0); ans=a-b; txt=a+' − '+b; }
+      else if(op==='mul'){ a=2+((Math.random()*8)|0); b=2+((Math.random()*8)|0); ans=a*b; txt=a+' × '+b; }
+      else{ b=2+((Math.random()*8)|0); const q=2+((Math.random()*11)|0); a=b*q; ans=q; txt=a+' ÷ '+b; }
+    }else if(lvl==='middle'){
+      allowNeg=true;
+      op=['add','sub','sq'][(Math.random()*3)|0];
+      if(op==='add'){ a=-20+((Math.random()*41)|0); b=-20+((Math.random()*41)|0); ans=a+b; txt=fmt(a)+' + '+fmt(b); }
+      else if(op==='sub'){ a=-15+((Math.random()*31)|0); b=-15+((Math.random()*31)|0); ans=a-b; txt=fmt(a)+' − '+fmt(b); }
+      else{ a=2+((Math.random()*13)|0); ans=a*a; txt=a+'²'; }
+    }else{
+      allowNeg=true;
+      op=['mulsub','pow','pct'][(Math.random()*3)|0];
+      if(op==='mulsub'){ a=2+((Math.random()*10)|0); b=2+((Math.random()*10)|0); c=1+((Math.random()*40)|0); ans=a*b-c; txt=a+' × '+b+' − '+c; }
+      else if(op==='pow'){ a=2+((Math.random()*7)|0); ans=Math.pow(2,a); txt='2^'+a; }
+      else{ a=[10,20,25,30,40,50,60,70,75,80,90][(Math.random()*11)|0]; b=[100,200,300,400][(Math.random()*4)|0]; ans=Math.round(b*a/100); txt=b+'의 '+a+'%'; }
+    }
     let wrong, guard=0;
-    do{
-      if(mode==='mul'&&Math.random()<0.6) wrong=(Math.random()<0.5)?(a+(Math.random()<0.5?1:-1))*b:a*(b+(Math.random()<0.5?1:-1));
-      else wrong=ans+[-10,-3,-2,-1,1,2,3,10][(Math.random()*8)|0];
-    }while((wrong===ans||wrong<0)&&guard++<20);
+    if(lvl==='high'&&op==='mul'){
+      wrong=(Math.random()<0.6)?(a+(Math.random()<0.5?1:-1))*b:a*(b+(Math.random()<0.5?1:-1));
+    }else if(lvl==='hs'&&op==='pow'){
+      wrong=Math.pow(2,Math.max(1,a+(Math.random()<0.5?1:-1)));
+    }else{
+      const deltas=lvl==='kinder'?[-2,-1,1,2]:lvl==='low'?[-5,-3,-2,-1,1,2,3,5]:lvl==='hs'?[-15,-8,-5,-3,3,5,8,15]:[-10,-5,-3,-2,-1,1,2,3,5,10];
+      do{ wrong=ans+deltas[(Math.random()*deltas.length)|0]; }while((wrong===ans||(!allowNeg&&wrong<0))&&guard++<20);
+    }
     if(wrong===ans) wrong=ans+1;
     const leftOk=Math.random()<0.5;
     const r=Math.max(44,Math.min(map.W,map.H)/7.5);
@@ -2498,18 +2525,18 @@ ACT.math=(()=>{
   }
   return {
     key:'math', hud:{counter:true,timer:true,end:true}, _G:G,
-    intro:{emoji:'🧮',title:'계산 눈치 게임',desc:'가운데 문제를 보고 <b>맞는 답 원을 손으로 먼저 쳐요!</b><br>정답 +10점, 오답 -5점. 눈치 빠른 사람이 이긴다! (45초)'},
+    intro:{emoji:'🧮',title:'계산 눈치 게임',desc:'가운데 문제를 보고 <b>맞는 답 원을 손으로 먼저 쳐요!</b><br>유치원부터 고등학생까지 난이도를 골라요. 정답 +10점, 오답 -5점! (45초)'},
     buildOpts(box){
-      try{ G.mode=localStorage.getItem('mc_mathmode')||'mix'; }catch(e){ G.mode='mix'; }
-      MODES.forEach(m=>{
+      try{ G.level=localStorage.getItem('mc_mathlevel')||'high'; }catch(e){ G.level='high'; }
+      LEVELS.forEach(m=>{
         const b=document.createElement('button');
-        b.className='opt-chip'+(G.mode===m[0]?' on':''); b.textContent=m[1];
-        b.onclick=()=>{ G.mode=m[0]; try{ localStorage.setItem('mc_mathmode',m[0]); }catch(e){}
+        b.className='opt-chip'+(G.level===m[0]?' on':''); b.textContent=m[1];
+        b.onclick=()=>{ G.level=m[0]; try{ localStorage.setItem('mc_mathlevel',m[0]); }catch(e){}
           box.querySelectorAll('.opt-chip').forEach(x=>x.classList.remove('on')); b.classList.add('on'); };
         box.appendChild(b);
       });
     },
-    start(){ if(!G.mode){ try{ G.mode=localStorage.getItem('mc_mathmode')||'mix'; }catch(e){ G.mode='mix'; } }
+    start(){ if(!G.level){ try{ G.level=localStorage.getItem('mc_mathlevel')||'high'; }catch(e){ G.level='high'; } }
       G.score=0; G.ok=0; G.bad=0; G.streak=0; G.endAt=performance.now()+DUR*1000; G.nextAt=0; G.q=null; G.shake=0;
       $('repNum').textContent='0'; $('repLbl').textContent='SCORE'; $('timerUnit').textContent='SEC'; },
     end(){ this.finish(); },
