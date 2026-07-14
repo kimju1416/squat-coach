@@ -275,7 +275,7 @@
         <button class="hcard" data-ex="board" style="--c:rgba(74,222,128,.5);--tc:#4ade80"><span class="ic">🧽</span><div class="tt">칠판 지우기</div><div class="dd">낙서 칠판 3판 연속 클리어! 타임어택</div><div class="bst" data-best="board"></div></button>
         <button class="hcard" data-ex="chop" style="--c:rgba(245,158,11,.5);--tc:#f59e0b"><span class="ic">🔪</span><div class="tt">도마 칼질</div><div class="dd">손날로 탁탁탁 채썰기, 45초 몇 조각?</div><div class="bst" data-best="chop"></div></button>
         <button class="hcard" data-ex="math" style="--c:rgba(251,191,36,.5);--tc:#fbbf24"><span class="ic">🧮</span><div class="tt">계산 눈치 게임</div><div class="dd">유치원~고등까지 난이도 선택, 정답을 먼저 쳐라!</div><div class="bst" data-best="math"></div></button>
-        <button class="hcard wide" data-ex="neck" style="--c:rgba(255,209,102,.55);--tc:#ffd166"><span class="ic">🤖</span><div class="tt">아이언 목운동</div><div class="dd">얼굴 인식 황금 마스크를 쓰고 화살표 따라 목 스트레칭 — 좌·우·위·아래 지긋이</div><div class="bst" data-best="neck"></div></button>
+        <button class="hcard wide" data-ex="neck" style="--c:rgba(56,189,248,.55);--tc:#38bdf8"><span class="ic">🤖</span><div class="tt">아이언 목운동</div><div class="dd">얼굴 인식 블루 마스크를 쓰고 화살표 따라 목 스트레칭 — 좌·우·위·아래 지긋이</div><div class="bst" data-best="neck"></div></button>
       </div>
       <div class="hub-sec">리액션 랩</div>
       <div class="hub-grid">
@@ -2398,15 +2398,15 @@ ACT.neck=(()=>{
     if(!(FaceLandmarker&&FaceLandmarker.FACE_LANDMARKS_TESSELATION)) return;
     ctx.save();
     ctx.globalAlpha=0.55; ctx.lineWidth=0.8;
-    ctx.strokeStyle='rgba(255,200,90,.55)';
-    ctx.shadowBlur=4; ctx.shadowColor='#ffcf5e';
+    ctx.strokeStyle='rgba(90,190,255,.55)';
+    ctx.shadowBlur=4; ctx.shadowColor='#5ec8ff';
     ctx.beginPath();
     FaceLandmarker.FACE_LANDMARKS_TESSELATION.forEach(c=>{
       const A=toPx(fl[c.start]), B=toPx(fl[c.end]);
       ctx.moveTo(A.x,A.y); ctx.lineTo(B.x,B.y);
     });
     ctx.stroke();
-    ctx.globalAlpha=0.95; ctx.lineWidth=2.2; ctx.strokeStyle='#ffd166'; ctx.shadowBlur=12;
+    ctx.globalAlpha=0.95; ctx.lineWidth=2.2; ctx.strokeStyle='#38bdf8'; ctx.shadowBlur=12;
     ctx.beginPath();
     (FaceLandmarker.FACE_LANDMARKS_FACE_OVAL||[]).forEach(c=>{
       const A=toPx(fl[c.start]), B=toPx(fl[c.end]);
@@ -2429,7 +2429,7 @@ ACT.neck=(()=>{
   }
   return {
     key:'neck', hud:{counter:true,timer:true,end:true}, _G:G, needsFace:true,
-    intro:{emoji:'🤖',title:'아이언 목운동',desc:'얼굴에 <b>황금 메시 마스크</b>가 씌워져요!<br>화살표를 따라 <b>고개를 좌·우·위·아래로</b> 지긋이 움직이면 인식돼요.<br>45초 동안 목 스트레칭 몇 동작이나 할까요?'},
+    intro:{emoji:'🤖',title:'아이언 목운동',desc:'얼굴에 <b>블루 메시 마스크</b>가 씌워져요!<br>화살표를 따라 <b>고개를 좌·우·위·아래로</b> 지긋이 움직이면 인식돼요.<br>45초 동안 목 스트레칭 몇 동작이나 할까요?'},
     start(){ G.n=0; G.endAt=performance.now()+DUR*1000; G.pt=0;
       G.state='cal'; G.calT=null; G.base=null; G.mi=0; G.restUntil=0; G.lostT=null;
       G.holdAcc=0; G.outAcc=0; G.fpt=0;
@@ -2486,7 +2486,7 @@ ACT.neck=(()=>{
         G.base=G.base?{yaw:G.base.yaw*0.85+p.yaw*0.15,pitch:G.base.pitch*0.85+p.pitch*0.15,asym:G.base.asym*0.85+p.asym*0.15}
                      :{yaw:p.yaw,pitch:p.pitch,asym:p.asym};
         const cp=Math.min(100,Math.round((now-G.calT)/1600*100));
-        setState('마스크 장착 중… 정면을 봐주세요 '+cp+'%','#ffd166');
+        setState('마스크 장착 중… 정면을 봐주세요 '+cp+'%','#38bdf8');
         if(now-G.calT>1600){ G.state='move'; G.holdAcc=0; G.outAcc=0; G.fpt=now; SFX.ding(); setState('준비 완료! 화살표를 따라 움직여요','#a3e635'); }
         return;
       }
@@ -2504,17 +2504,17 @@ ACT.neck=(()=>{
       if(inZone){ G.holdAcc+=fdt; G.outAcc=0; }
       else{ G.outAcc+=fdt; if(G.outAcc>350) G.holdAcc=0; }
       const prog=G.holdAcc/(mv.hold||HOLD);
-      drawArrow(ax,ay,ar,mv.ang,inZone?'#a3e635':'#ffd166',prog);
+      drawArrow(ax,ay,ar,mv.ang,inZone?'#a3e635':'#38bdf8',prog);
       // 실시간 방향 게이지: 임계까지 얼마나 왔는지 보여줘 "인식 중" 피드백
       const gv=Math.max(0,Math.min(1,mv.gauge(d)));
       const mw=Math.max(96,map.W*0.3), my=ay+ar*1.45;
       ctx.save();
       ctx.fillStyle='rgba(148,163,184,.25)'; rrCtx(ax-mw/2,my,mw,8,4); ctx.fill();
-      ctx.fillStyle=inZone?'#a3e635':'#ffd166'; rrCtx(ax-mw/2,my,mw*gv,8,4); ctx.fill();
+      ctx.fillStyle=inZone?'#a3e635':'#38bdf8'; rrCtx(ax-mw/2,my,mw*gv,8,4); ctx.fill();
       ctx.strokeStyle='rgba(255,255,255,.7)'; ctx.lineWidth=2;
       ctx.beginPath(); ctx.moveTo(ax+mw/2,my-3); ctx.lineTo(ax+mw/2,my+11); ctx.stroke();
       ctx.restore();
-      setState(inZone?(mv.label+' — 유지!'):('▶ '+mv.label),inZone?'#a3e635':'#ffd166');
+      setState(inZone?(mv.label+' — 유지!'):('▶ '+mv.label),inZone?'#a3e635':'#38bdf8');
       if(prog>=1) this._succeed(now);
     }
   };
