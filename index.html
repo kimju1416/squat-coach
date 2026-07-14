@@ -89,8 +89,9 @@
   #hubScr h1{font-size:clamp(26px,7.4vw,40px);font-weight:900;letter-spacing:-1px;text-align:center;
     background:linear-gradient(110deg,#7fefff,#c79bff);-webkit-background-clip:text;background-clip:text;color:transparent;}
   .hub-sub{text-align:center;font-size:13px;color:#9fb6d8;margin:10px 0 22px;line-height:1.6;}
-  .hub-sec{display:flex;align-items:center;gap:10px;font-size:12px;font-weight:800;letter-spacing:3px;color:#5f7ea0;margin:22px 4px 10px;text-align:left;white-space:nowrap;}
-  .hub-sec::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,rgba(148,163,184,.3),transparent);}
+  .hub-sec{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:900;letter-spacing:1.5px;color:#7fefff;margin:28px 4px 12px;text-align:left;white-space:nowrap;text-shadow:0 0 14px rgba(127,239,255,.4);}
+  .hub-sec::before{content:'';width:4px;height:15px;border-radius:2px;background:linear-gradient(180deg,#7fefff,#c79bff);flex:0 0 auto;}
+  .hub-sec::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,rgba(148,163,184,.35),transparent);}
   .hub-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
   .hcard{position:relative;text-align:left;background:rgba(255,255,255,.045);border:1px solid rgba(148,163,184,.22);border-radius:18px;
     padding:16px 15px 14px;cursor:pointer;color:#e8faff;transition:transform .1s;overflow:hidden;}
@@ -219,12 +220,6 @@
   .trend-bars{display:flex;align-items:flex-end;gap:5px;height:44px;flex:0 0 auto;}
   .trend-bars i{display:block;width:9px;border-radius:3px 3px 0 0;background:linear-gradient(180deg,#2dd4bf,#0891b2);}
   .trend-txt{font-size:11.5px;color:#9fb6d8;line-height:1.6;}
-  #tapBtn{display:none;position:absolute;left:50%;bottom:8%;transform:translate(-50%,0);z-index:16;
-    width:128px;height:128px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#a78bfa,#6d28d9);
-    color:#fff;font-family:Pretendard;font-weight:900;font-size:22px;letter-spacing:1px;
-    box-shadow:0 0 0 6px rgba(139,124,246,.22),0 10px 30px rgba(0,0,0,.45);border:none;}
-  #tapBtn.show{display:block;}
-  #tapBtn:active{transform:translate(-50%,0) scale(.94);}
 </style>
 </head>
 <body>
@@ -234,7 +229,6 @@
   <div id="vignette"></div>
   <div class="corner c-tl"></div><div class="corner c-tr"></div>
   <div class="corner c-bl"></div><div class="corner c-br"></div>
-  <button id="tapBtn">TAP!</button>
 
   <div id="hudTop">
     <div class="hud-name" id="hudName">AI MOTION</div>
@@ -260,7 +254,7 @@
       <div class="hub-sub">카메라가 몸의 관절을 인식해요.<br>폰을 세워두고 <b style="color:#a5f3fc">2~3걸음 뒤로</b> 물러나 전신이 보이게 해 주세요.</div>
       <div class="hub-sec">🏆 오늘의 챌린지</div>
       <div class="hub-grid">
-        <button class="hcard wide ch-card" id="challengeCard" style="--c:rgba(255,209,102,.6);--tc:#ffd166"><span class="ic"></span><div class="tt">전체 챌린지 — 16개 활동 완주</div><div class="dd">스쿼트부터 자세분석까지 순서대로 한 번씩! 활동 사이 60초 휴식, 버튼 하나로 쭉 이어져요 (약 25~30분)</div></button>
+        <button class="hcard wide ch-card" id="challengeCard" style="--c:rgba(255,209,102,.6);--tc:#ffd166"><span class="ic"></span><div class="tt">전체 챌린지 — 15개 활동 완주</div><div class="dd">스쿼트부터 자세분석까지 순서대로 한 번씩! 활동 사이 60초 휴식, 버튼 하나로 쭉 이어져요 (약 25~30분)</div></button>
       </div>
       <div class="hub-sec">운동 카운터</div>
       <div class="hub-grid">
@@ -271,7 +265,6 @@
       <div class="hub-grid">
         <button class="hcard" data-ex="mole" style="--c:rgba(251,191,36,.5);--tc:#fbbf24"><span class="ic">🐹</span><div class="tt">두더지 잡기</div><div class="dd">45초 안에 손으로 최대한 많이!</div><div class="bst" data-best="mole"></div></button>
         <button class="hcard" data-ex="reaction" style="--c:rgba(251,113,133,.5);--tc:#fb7185"><span class="ic">⚡</span><div class="tt">반응속도 45초</div><div class="dd">번쩍이는 원을 쉬지 않고 최대한 많이!</div><div class="bst" data-best="reaction2"></div></button>
-        <button class="hcard" data-ex="timingbar" style="--c:rgba(139,124,246,.5);--tc:#8B7CF6"><span class="ic">🎯</span><div class="tt">타이밍 바</div><div class="dd">TAP 버튼으로 퍼펙트존 맞히기, 15회 도전!</div><div class="bst" data-best="timingbar"></div></button>
         <button class="hcard" data-ex="sequence" style="--c:rgba(167,139,250,.5);--tc:#a78bfa"><span class="ic">🔢</span><div class="tt">넘버 헌터</div><div class="dd">1→2→3→4 순서 터치, 45초 몇 세트?</div><div class="bst" data-best="sequence2"></div></button>
         <button class="hcard" data-ex="tissue" style="--c:rgba(240,171,252,.5);--tc:#f0abfc"><span class="ic">🧻</span><div class="tt">스피드 휴지 뽑기</div><div class="dd">위로 휙휙! 45초 동안 몇 장?</div><div class="bst" data-best="tissue"></div></button>
         <button class="hcard" data-ex="hammer" style="--c:rgba(234,179,8,.5);--tc:#eab308"><span class="ic">🔨</span><div class="tt">뚝딱 망치질</div><div class="dd">내리쳐서 못 박기 — 세 방이면 완성!</div><div class="bst" data-best="hammer"></div></button>
@@ -1073,7 +1066,7 @@ function show(id){
   $('recScr').classList.remove('show');
   $('chRestScr').classList.remove('show');
 }
-function hideAll(){ scrs.forEach(s=>$(s).classList.remove('show')); $('reportScr').classList.remove('show'); $('recScr').classList.remove('show'); $('chRestScr').classList.remove('show'); $('tapBtn').classList.remove('show'); }
+function hideAll(){ scrs.forEach(s=>$(s).classList.remove('show')); $('reportScr').classList.remove('show'); $('recScr').classList.remove('show'); $('chRestScr').classList.remove('show'); }
 function setHud(on,opt){
   opt=opt||{};
   $('hudTop').classList.toggle('show',on);
@@ -1104,7 +1097,7 @@ const best={
 function bestLabel(k){
   const v=best.get(k);
   if(v==null) return '';
-  if(k==='mole'||k==='balloon'||k==='fruit'||k==='math'||k==='timingbar') return '🏆 최고 '+v+'점';
+  if(k==='mole'||k==='balloon'||k==='fruit'||k==='math') return '🏆 최고 '+v+'점';
   if(k==='neck') return '🏆 최고 '+v+'동작';
   if(k==='reaction2') return '🏆 최고 '+v+'개';
   if(k==='sequence2') return '🏆 최고 '+v+'세트';
@@ -1459,84 +1452,6 @@ ACT.reaction=(()=>{
     }
   };
 })();
-
-/* ---------- 타이밍 바 (리액션 랩 이식, 중급 고정 · 탭 전용) ---------- */
-ACT.timingbar=(()=>{
-  const G={};
-  const P={sp:.55,max:1.3,inc:.08,pz:[.44,.56],gz:[.35,.65],gr:[1800,1300,900,500]};
-  const TAPS=15;
-  function tap(){
-    if(!G.playing||G.taps<=0) return;
-    const center=G.pos;
-    let judge,pts,col;
-    if(center>=P.pz[0]&&center<=P.pz[1]){ judge='PERFECT'; pts=100; col='#a3e635'; G.combo++; }
-    else if(center>=P.gz[0]&&center<=P.gz[1]){ judge='GOOD'; pts=50; col='#22d3ee'; G.combo++; }
-    else{ judge='MISS'; pts=0; col='#fb7185'; G.combo=0; }
-    G.maxCombo=Math.max(G.maxCombo,G.combo);
-    const mult=1+Math.floor(G.combo/3)*0.5;
-    G.score+=Math.round(pts*mult);
-    G.taps--;
-    if(G.combo>0&&G.combo%3===0) G.speed=Math.min(G.speed+P.inc,P.max);
-    G.judge={txt:judge+(judge!=='MISS'&&mult>1?' ×'+mult.toFixed(1):''),t:performance.now(),col};
-    const n=$('repNum'); n.textContent=G.score; n.classList.remove('pop'); void n.offsetWidth; n.classList.add('pop');
-    if(judge==='PERFECT'){ beep(880,0.1); buzz(30); } else if(judge==='GOOD'){ beep(660,0.1); buzz(30); } else{ beep(220,0.15); buzz([0,60,40,60]); }
-    if(G.taps<=0) ACT.timingbar.finish();
-  }
-  return {
-    key:'timingbar', hud:{counter:true,end:true}, _G:G,
-    intro:{emoji:'🎯',title:'타이밍 바 (중급)',desc:'화면 속 <b>보라색 TAP 버튼</b>을 눌러 바가 <b>초록 퍼펙트존</b>에 들어왔을 때 맞혀요.<br>15회 도전 · 콤보 쌓으면 점수 배율 업!'},
-    start(){
-      G.pos=0; G.dir=1; G.speed=P.sp; G.taps=TAPS; G.score=0; G.combo=0; G.maxCombo=0; G.last=performance.now(); G.playing=true; G.judge=null;
-      $('repNum').textContent='0'; $('repLbl').textContent='SCORE';
-      $('tapBtn').classList.add('show');
-    },
-    end(){ this.finish(); },
-    finish(){
-      G.playing=false;
-      $('tapBtn').classList.remove('show');
-      const prev=+(best.get('timingbar')||0); if(G.score>prev) best.set('timingbar',G.score);
-      const g=P.gr;
-      const grade=G.score>=g[0]?'S':G.score>=g[1]?'A':G.score>=g[2]?'B':G.score>=g[3]?'C':'D';
-      showResult({num:G.score,sub:'점! '+grade+'등급'+(G.score>prev&&G.score>0?' 🏆 기록 경신!':''),
-        detail:'최대 콤보 <span class="nb">'+G.maxCombo+'</span>'});
-    },
-    frame(lms){
-      const now=performance.now();
-      const dt=Math.min(0.05,(now-G.last)/1000); G.last=now;
-      if(G.playing){
-        G.pos+=G.dir*G.speed*dt;
-        if(G.pos>=1){ G.pos=1; G.dir=-1; }
-        if(G.pos<=0){ G.pos=0; G.dir=1; }
-      }
-      if(lms) drawPose(lms,'#8B7CF6'); else setState('몸이 보이게 서 주세요','#8B7CF6');
-      const tw=Math.min(map.W*0.82,420), th=Math.max(28,map.H*0.055);
-      const tx=map.W/2-tw/2, ty=map.H*0.6;
-      ctx.save();
-      ctx.fillStyle='rgba(4,12,26,.65)'; ctx.strokeStyle='rgba(139,124,246,.6)'; ctx.lineWidth=2;
-      rrCtx(tx,ty,tw,th,th/2); ctx.fill(); ctx.stroke();
-      ctx.fillStyle='rgba(34,211,238,.35)'; rrCtx(tx+P.gz[0]*tw,ty,(P.gz[1]-P.gz[0])*tw,th,th/2); ctx.fill();
-      ctx.fillStyle='rgba(163,230,53,.55)'; rrCtx(tx+P.pz[0]*tw,ty,(P.pz[1]-P.pz[0])*tw,th,th/2); ctx.fill();
-      const bw=Math.max(8,tw*0.025);
-      ctx.fillStyle='#fff'; ctx.shadowBlur=14; ctx.shadowColor='#8B7CF6';
-      ctx.fillRect(tx+G.pos*(tw-bw),ty-4,bw,th+8);
-      ctx.shadowBlur=0;
-      ctx.font='700 '+Math.max(13,map.W/32)+'px Pretendard'; ctx.textAlign='center'; ctx.fillStyle='#93a9c8';
-      ctx.fillText('남은 '+G.taps+'회',map.W/2,ty-16);
-      if(G.combo>1){ ctx.font='900 '+Math.max(15,map.W/26)+'px Pretendard'; ctx.fillStyle='#fbbf24'; ctx.fillText('🔥 '+G.combo+'콤보',map.W/2,ty+th+28); }
-      if(G.judge&&now-G.judge.t<500){
-        const a=1-(now-G.judge.t)/500;
-        ctx.globalAlpha=a; ctx.font='900 '+Math.max(20,map.W/14)+'px Pretendard'; ctx.fillStyle=G.judge.col;
-        ctx.fillText(G.judge.txt,map.W/2,ty+th+66); ctx.globalAlpha=1;
-      }
-      ctx.restore();
-    },
-    _tap:tap
-  };
-})();
-document.getElementById('tapBtn').addEventListener('pointerdown',e=>{
-  e.preventDefault();
-  if(current&&current.key==='timingbar') current._tap();
-});
 
 /* ---------- 넘버 헌터 (1→2→3→4, 45초 연속 세트) ---------- */
 ACT.sequence=(()=>{
@@ -3395,7 +3310,6 @@ function goHub(){
   running=false; current=null; setHud(false);
   SFX.mosqBuzz.stop();
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  $('tapBtn').classList.remove('show');
   if(CH){ clearInterval(CH.timer); CH=null; }
   refreshBests();
   show('hubScr');
@@ -3421,10 +3335,6 @@ const HUBICON={
   reaction:SV+'<circle cx="24" cy="28" r="10"/><circle cx="24" cy="28" r="4.2"/>'+DOT(24,28,1.8)
     +'<path d="M31,3.5 L24,16 H29 L21.5,29" stroke-width="2.6"/>'
     +'<path d="M10,18 l-3.2,-2 M38.5,19 l3.2,-2" opacity=".5" stroke-width="2"/></svg>',
-  timingbar:SV+'<rect x="5" y="20" width="38" height="9" rx="4.5"/>'
-    +'<rect x="16" y="20" width="16" height="9" rx="4.5" opacity=".55" fill="currentColor" stroke="none"/>'
-    +'<rect x="20" y="17.5" width="5" height="14" rx="1.6" fill="currentColor" stroke="none"/>'
-    +'<path d="M24,7 v5 M24,36 v5 M9,24.5 h-5 M39,24.5 h5" opacity=".6" stroke-width="2"/></svg>',
   sequence:SV+'<circle cx="11.5" cy="33" r="6"/><circle cx="24" cy="14.5" r="6"/><circle cx="36.5" cy="33" r="6"/>'
     +'<path d="M15,28.3 L20.2,20.3 M27.8,20.3 L33,28.3" opacity=".55" stroke-dasharray="3 3" stroke-width="2"/>'
     +'<text x="11.5" y="36.4" font-size="9.5" font-weight="900" fill="currentColor" stroke="none" text-anchor="middle">1</text>'
@@ -3505,8 +3415,8 @@ if(recCard) recCard.addEventListener('click',openRecords);
 const chCard=$('challengeCard');
 if(chCard) chCard.addEventListener('click',()=>{ initAudio(); startChallenge(); });
 
-/* ---------- 챌린지: 16개 활동 순서대로 완주 ---------- */
-const CH_ORDER=['squat','jacks','mole','reaction','timingbar','sequence','tissue','hammer','balloon','fruit','cloud','mosquito','board','chop','neck','posture'];
+/* ---------- 챌린지: 15개 활동 순서대로 완주 ---------- */
+const CH_ORDER=['squat','jacks','mole','reaction','sequence','tissue','hammer','balloon','fruit','cloud','mosquito','board','chop','neck','posture'];
 const CH_REST=60;
 let CH=null;
 function startChallenge(){
@@ -3544,7 +3454,7 @@ function advanceChallenge(){
 function finishChallenge(){
   const results=CH.results;
   CH=null;
-  let h='<h2>🏆 챌린지 결과</h2><div class="rp-date">'+new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric'})+' · 16개 전체 완주!</div>';
+  let h='<h2>🏆 챌린지 결과</h2><div class="rp-date">'+new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric'})+' · 15개 전체 완주!</div>';
   h+='<div class="rp-summary"><span class="sm-chip g0">🎉 챌린지 완주!</span></div>';
   results.forEach(r=>{
     h+='<div class="m-card"><div class="m-top"><span class="ic">'+(HUBICON[r.key]||'')+'</span><span class="nm">'+r.label+'</span></div>'
