@@ -331,7 +331,7 @@
   <!-- 챌린지 휴식 화면 -->
   <div id="chRestScr">
     <div class="ch-in">
-      <div class="ch-prog" id="chProgress">챌린지 0 / 16 완료</div>
+      <div class="ch-prog" id="chProgress">챌린지 0 / 15 완료</div>
       <div class="ch-num" id="chRestNum">60</div>
       <div class="ch-restlbl">휴식 중 — 물 한 모금 마시고 숨 고르세요</div>
       <div class="ch-next">
@@ -1095,6 +1095,7 @@ const best={
   set(k,v){ try{ localStorage.setItem('mc_best_'+k,v); }catch(e){} }
 };
 function bestLabel(k){
+  if(k==='reaction') k='reaction2'; else if(k==='sequence') k='sequence2';
   const v=best.get(k);
   if(v==null) return '';
   if(k==='mole'||k==='balloon'||k==='fruit'||k==='math') return '🏆 최고 '+v+'점';
@@ -2212,7 +2213,7 @@ ACT.board=(()=>{
         showResult({num:sec.toFixed(1),sub:'초에 3판 클리어! 🧽'+(sec<prev?' 🏆 기록 경신!':''),
           detail:sec<55?'번개 지우개! ⚡':sec<85?'선생님이 좋아하시겠어요!':'다음엔 팔을 더 크게 휘둘러요!'});
       }else{
-        showResult({num:G.round,sub:'판째 도전 중이었어요',detail:'3판을 모두 지우면 기록이 남아요! (현재 판 '+pct+'%)'});
+        showResult({num:G.round,noLog:true,sub:'판째 도전 중이었어요',detail:'3판을 모두 지우면 기록이 남아요! (현재 판 '+pct+'%)'});
       }
     },
     frame(lms){
@@ -3292,7 +3293,7 @@ async function startActivity(){
 function showResult(o){
   running=false; setHud(false); current=null;
   SFX.mosqBuzz.stop();
-  if(o.num!=null&&curKey) logPlay(curKey,o.num);   // 점수 자동 저장(내 기록)
+  if(o.num!=null&&!o.noLog&&curKey) logPlay(curKey,o.num);   // 점수 자동 저장(내 기록)
   refreshBests();
   if(CH){
     CH.results.push({key:curKey,label:(ACT[curKey].intro&&ACT[curKey].intro.title)||curKey,num:o.num,sub:o.sub||''});
@@ -3431,6 +3432,7 @@ function runChallengeActivity(){
 }
 function startChallengeRest(){
   clearInterval(CH.timer);
+  if(CH.idx>=CH_ORDER.length){ finishChallenge(); return; }
   hideAll();
   const nextKey=CH_ORDER[CH.idx];
   const nextA=ACT[nextKey];
@@ -3454,7 +3456,7 @@ function advanceChallenge(){
 function finishChallenge(){
   const results=CH.results;
   CH=null;
-  let h='<h2>🏆 챌린지 결과</h2><div class="rp-date">'+new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric'})+' · 15개 전체 완주!</div>';
+  let h='<h2>🏆 챌린지 결과</h2><div class="rp-date">'+new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric'})+' · '+CH_ORDER.length+'개 전체 완주!</div>';
   h+='<div class="rp-summary"><span class="sm-chip g0">🎉 챌린지 완주!</span></div>';
   results.forEach(r=>{
     h+='<div class="m-card"><div class="m-top"><span class="ic">'+(HUBICON[r.key]||'')+'</span><span class="nm">'+r.label+'</span></div>'
