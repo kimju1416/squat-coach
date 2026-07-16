@@ -320,7 +320,7 @@ button{font-family:inherit;border:none;cursor:pointer;background:none;color:inhe
       <span style="min-width:54px;text-align:center;background:var(--card);border-radius:10px;padding:7px 6px;font-size:12.5px;color:var(--sub)">4회</span>
       <span style="min-width:54px;text-align:center;background:var(--card);border-radius:10px;padding:7px 6px;font-size:12.5px;color:var(--sub)">5회</span>
     </div>
-    <div class="timerzone" id="g4zone" onclick="g4.zoneTap()">
+    <div class="timerzone" id="g4zone">
       <div class="tz-big" id="g4big">3.00</div>
       <div class="tz-sub" id="g4sub">아래 버튼으로 시작 → 머릿속으로 세고 화면 탭!</div>
     </div>
@@ -505,8 +505,8 @@ function refreshBests(){
   const b5=k('rl_g5');$('best-g5').textContent=b5?b5+'점':'-';
 }
 function checkBest(key,val,higherBetter){
-  const prev=store.get(key);
-  if(prev==null||(higherBetter?val>+prev:val<+prev)){store.set(key,val);return true}
+  const prev=store.get(key), p=+prev;
+  if(prev==null||isNaN(p)||(higherBetter?val>p:val<p)){store.set(key,val);return true}
   return false;
 }
 
@@ -684,7 +684,7 @@ const g3={
       const sky=$('g3sky'),W=sky.clientWidth;
       this.birds=this.birds.filter(b=>{
         b.x+=b.vx*dt;
-        b.y+=Math.sin(t/300+b.phase)*0.4;
+        b.y+=Math.sin(t/300+b.phase)*24*dt;   // dt 스케일링(주사율 무관 동일 진폭)
         b.el.style.transform=`translate(${b.x}px,${b.y}px) scaleX(${b.vx>0?-1:1})`;
         if(b.x<-60||b.x>W+60){b.el.remove();return false}
         return true;
@@ -990,6 +990,8 @@ const g6={
       return;
     }
     if(this.state==='roundend'){
+      // 동시 탭 레이스 방지: 라운드 종료 직후 800ms 안에 들어온 탭(패자의 손가락)은 무시
+      if(performance.now()-(this.endT||0)<800)return;
       if(this.wins.top>=3||this.wins.bot>=3)this.resetMatch();
       else this.resetRound();
       return;
@@ -1023,7 +1025,7 @@ const g6={
   },
   roundEnd(winner,loser,msg,legit){
     clearTimeout(this.timer);clearTimeout(this.fakeT);clearTimeout(this.fakeT2);
-    this.state='roundend';
+    this.state='roundend';this.endT=performance.now();
     this.wins[winner]++;
     this.updatePips();
     $('g6sig').classList.remove('fire');$('g6sig').style.background='';
@@ -1049,6 +1051,8 @@ const g6={
 };
 
 const games={g1,g2,g3,g4,g5,g6};
+// G4: click(손가락 뗄 때 발생)은 측정이 늦어지므로 다른 게임과 동일하게 pointerdown으로 측정
+$('g4zone').addEventListener('pointerdown',e=>{e.preventDefault();g4.zoneTap();});
 applyDiffUI();
 refreshBests();
 document.addEventListener('contextmenu',e=>e.preventDefault());
